@@ -1727,6 +1727,30 @@ extern "C"
 		uint64_t addr;
 	};
 
+	struct BNTypeField
+	{
+		BNQualifiedName name;
+		uint64_t offset;
+	};
+
+	// This describes how a type is referenced
+	enum BNTypeReferenceType
+	{
+		// Type A contains type B
+		DirectTypeReferenceType,
+		// All other cases, e.g., type A contains a pointer to type B
+		IndirectTypeReferenceType,
+		// The nature of the reference is unknown
+		UnknownTypeReferenceType
+	};
+
+	struct BNTypeReferenceSource
+	{
+		BNQualifiedName name;
+		uint64_t offset;
+		BNTypeReferenceType type;
+	};
+
 	enum BNTagTypeType
 	{
 		UserTagType,
@@ -3071,6 +3095,7 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI BNFunction* BNGetAnalysisFunction(BNBinaryView* view, BNPlatform* platform, uint64_t addr);
 	BINARYNINJACOREAPI BNFunction* BNGetRecentAnalysisFunctionForAddress(BNBinaryView* view, uint64_t addr);
 	BINARYNINJACOREAPI BNFunction** BNGetAnalysisFunctionsForAddress(BNBinaryView* view, uint64_t addr, size_t* count);
+	BINARYNINJACOREAPI BNFunction** BNGetAnalysisFunctionsContainingAddress(BNBinaryView* view, uint64_t addr, size_t* count);
 	BINARYNINJACOREAPI BNFunction* BNGetAnalysisEntryPoint(BNBinaryView* view);
 
 	BINARYNINJACOREAPI char* BNGetGlobalCommentForAddress(BNBinaryView* view, uint64_t addr);
@@ -3096,6 +3121,13 @@ __attribute__ ((format (printf, 1, 2)))
 
 	BINARYNINJACOREAPI void BNAddUserCodeReference(BNFunction* func, BNArchitecture* fromArch, uint64_t fromAddr, uint64_t toAddr);
 	BINARYNINJACOREAPI void BNRemoveUserCodeReference(BNFunction* func, BNArchitecture* fromArch, uint64_t fromAddr, uint64_t toAddr);
+
+	BINARYNINJACOREAPI void BNAddUserTypeReference(BNFunction* func, BNArchitecture* fromArch, uint64_t fromAddr, BNQualifiedName* name);
+	BINARYNINJACOREAPI void BNRemoveUserTypeReference(BNFunction* func, BNArchitecture* fromArch, uint64_t fromAddr, BNQualifiedName* name);
+	BINARYNINJACOREAPI void BNAddUserTypeFieldReference(BNFunction* func, BNArchitecture* fromArch, uint64_t fromAddr,
+		BNQualifiedName* name, uint64_t offset);
+	BINARYNINJACOREAPI void BNRemoveUserTypeFieldReference(BNFunction* func, BNArchitecture* fromArch, uint64_t fromAddr,
+		BNQualifiedName* name, uint64_t offset);
 
 	BINARYNINJACOREAPI BNBasicBlock* BNNewBasicBlockReference(BNBasicBlock* block);
 	BINARYNINJACOREAPI void BNFreeBasicBlock(BNBasicBlock* block);
@@ -3285,6 +3317,26 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI void BNAddUserDataReference(BNBinaryView* view, uint64_t fromAddr, uint64_t toAddr);
 	BINARYNINJACOREAPI void BNRemoveUserDataReference(BNBinaryView* view, uint64_t fromAddr, uint64_t toAddr);
 	BINARYNINJACOREAPI void BNFreeDataReferences(uint64_t* refs);
+
+	BINARYNINJACOREAPI void BNFreeTypeReferences(BNTypeReferenceSource* refs, size_t count);
+
+	// References to type
+	BINARYNINJACOREAPI BNReferenceSource* BNGetCodeReferencesForType(BNBinaryView* view, BNQualifiedName* type, size_t* count);
+	BINARYNINJACOREAPI uint64_t* BNGetDataReferencesForType(BNBinaryView* view, BNQualifiedName* type, size_t* count);
+	BINARYNINJACOREAPI BNTypeReferenceSource* BNGetTypeReferencesForType(BNBinaryView* view, BNQualifiedName* type, size_t* count);
+
+	// References to type field
+	BINARYNINJACOREAPI BNReferenceSource* BNGetCodeReferencesForTypeField(BNBinaryView* view,
+		BNQualifiedName* type, uint64_t offset, size_t* count);
+	BINARYNINJACOREAPI uint64_t* BNGetDataReferencesForTypeField(BNBinaryView* view,
+		BNQualifiedName* type, uint64_t offset, size_t* count);
+	BINARYNINJACOREAPI BNTypeReferenceSource* BNGetTypeReferencesForTypeField(BNBinaryView* view,
+		BNQualifiedName* type, uint64_t offset, size_t* count);
+
+	BINARYNINJACOREAPI BNTypeReferenceSource* BNGetCodeReferencesForTypeFrom(BNBinaryView* view, BNReferenceSource* addr, size_t* count);
+	BINARYNINJACOREAPI BNTypeReferenceSource* BNGetCodeReferencesForTypeFromInRange(BNBinaryView* view, BNReferenceSource* addr, uint64_t len, size_t* count);
+	BINARYNINJACOREAPI BNTypeReferenceSource* BNGetCodeReferencesForTypeFieldsFrom(BNBinaryView* view, BNReferenceSource* addr, size_t* count);
+	BINARYNINJACOREAPI BNTypeReferenceSource* BNGetCodeReferencesForTypeFieldsFromInRange(BNBinaryView* view, BNReferenceSource* addr, uint64_t len, size_t* count);
 
 	BINARYNINJACOREAPI void BNRegisterGlobalFunctionRecognizer(BNFunctionRecognizer* rec);
 
@@ -4243,6 +4295,9 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI BNType* BNTypeWithReplacedStructure(BNType* type, BNStructure* from, BNStructure* to);
 	BINARYNINJACOREAPI BNType* BNTypeWithReplacedEnumeration(BNType* type, BNEnumeration* from, BNEnumeration* to);
 	BINARYNINJACOREAPI BNType* BNTypeWithReplacedNamedTypeReference(BNType* type, BNNamedTypeReference* from, BNNamedTypeReference* to);
+
+	BINARYNINJACOREAPI bool BNAddTypeMemberTokens(BNType* type, BNBinaryView* data, BNInstructionTextToken** tokens, size_t* tokenCount, 
+		int64_t offset, char*** nameList, size_t* nameCount, size_t size, bool indirect);
 
 	BINARYNINJACOREAPI BNQualifiedName BNTypeBuilderGetTypeName(BNTypeBuilder* nt);
 	BINARYNINJACOREAPI void BNTypeBuilderSetTypeName(BNTypeBuilder* type, BNQualifiedName* name);

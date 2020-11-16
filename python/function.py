@@ -2017,6 +2017,98 @@ class Function(object):
 
 		core.BNRemoveUserCodeReference(self.handle, from_arch.handle, from_addr, to_addr)
 
+	def add_user_type_ref(self, from_addr, name, from_arch=None):
+		"""
+		``add_user_type_ref`` places a user-defined type cross-reference from the instruction at
+		the given address and architecture to the specified type. If the specified
+		source instruction is not contained within this function, no action is performed.
+		To remove the reference, use :func:`remove_user_type_ref`.
+
+		:param int from_addr: virtual address of the source instruction
+		:param QualifiedName name: name of the referenced type
+		:param Architecture from_arch: (optional) architecture of the source instruction
+		:rtype: None
+		:Example:
+
+			>>> current_function.add_user_code_ref(here, 'A')
+
+		"""
+
+		if from_arch is None:
+			from_arch = self.arch
+
+		name = types.QualifiedName(name)._get_core_struct()
+		core.BNAddUserTypeReference(self.handle, from_arch.handle, from_addr, name)
+
+	def remove_user_type_ref(self, from_addr, name, from_arch=None):
+		"""
+		``remove_user_type_ref`` removes a user-defined type cross-reference.
+		If the given address is not contained within this function, or if there is no
+		such user-defined cross-reference, no action is performed.
+
+		:param int from_addr: virtual address of the source instruction
+		:param QualifiedName name: name of the referenced type
+		:param Architecture from_arch: (optional) architecture of the source instruction
+		:rtype: None
+		:Example:
+
+			>>> current_function.remove_user_type_ref(here, 'A')
+
+		"""
+
+		if from_arch is None:
+			from_arch = self.arch
+
+		name = types.QualifiedName(name)._get_core_struct()
+		core.BNRemoveUserTypeReference(self.handle, from_arch.handle, from_addr, name)
+
+	def add_user_type_field_ref(self, from_addr, name, offset, from_arch=None):
+		"""
+		``add_user_type_field_ref`` places a user-defined type field cross-reference from the
+		instruction at the given address and architecture to the specified type. If the specified
+		source instruction is not contained within this function, no action is performed.
+		To remove the reference, use :func:`remove_user_type_field_ref`.
+
+		:param int from_addr: virtual address of the source instruction
+		:param QualifiedName name: name of the referenced type
+		:param int offset: offset of the field, relative to the type
+		:param Architecture from_arch: (optional) architecture of the source instruction
+		:rtype: None
+		:Example:
+
+			>>> current_function.add_user_type_field_ref(here, 'A'. 0x8)
+
+		"""
+
+		if from_arch is None:
+			from_arch = self.arch
+
+		name = types.QualifiedName(name)._get_core_struct()
+		core.BNAddUserTypeFieldReference(self.handle, from_arch.handle, from_addr, name, offset)
+
+	def remove_user_type_field_ref(self, from_addr, name, offset, from_arch=None):
+		"""
+		``remove_user_type_field_ref`` removes a user-defined type field cross-reference.
+		If the given address is not contained within this function, or if there is no
+		such user-defined cross-reference, no action is performed.
+
+		:param int from_addr: virtual address of the source instruction
+		:param QualifiedName name: name of the referenced type
+		:param int offset: offset of the field, relative to the type
+		:param Architecture from_arch: (optional) architecture of the source instruction
+		:rtype: None
+		:Example:
+
+			>>> current_function.remove_user_type_field_ref(here, 'A', 0x8)
+
+		"""
+
+		if from_arch is None:
+			from_arch = self.arch
+
+		name = types.QualifiedName(name)._get_core_struct()
+		core.BNRemoveUserTypeFieldReference(self.handle, from_arch.handle, from_addr, name, offset)
+
 	def get_low_level_il_at(self, addr, arch=None):
 		"""
 		``get_low_level_il_at`` gets the LowLevelILInstruction corresponding to the given virtual address

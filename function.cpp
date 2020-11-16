@@ -289,6 +289,34 @@ void Function::RemoveUserCodeReference(Architecture* fromArch, uint64_t fromAddr
 }
 
 
+void Function::AddUserTypeReference(Architecture* fromArch, uint64_t fromAddr, const QualifiedName& name)
+{
+	BNQualifiedName nameObj = name.GetAPIObject();
+	BNAddUserTypeReference(m_object, fromArch->GetObject(), fromAddr, &nameObj);
+}
+
+
+void Function::RemoveUserTypeReference(Architecture* fromArch, uint64_t fromAddr, const QualifiedName& name)
+{
+	BNQualifiedName nameObj = name.GetAPIObject();
+	BNRemoveUserTypeReference(m_object, fromArch->GetObject(), fromAddr, &nameObj);
+}
+
+
+void Function::AddUserTypeFieldReference(Architecture* fromArch, uint64_t fromAddr, const QualifiedName& name, uint64_t offset)
+{
+	BNQualifiedName nameObj = name.GetAPIObject();
+	BNAddUserTypeFieldReference(m_object, fromArch->GetObject(), fromAddr, &nameObj, offset);
+}
+
+
+void Function::RemoveUserTypeFieldReference(Architecture* fromArch, uint64_t fromAddr, const QualifiedName& name, uint64_t offset)
+{
+	BNQualifiedName nameObj = name.GetAPIObject();
+	BNRemoveUserTypeFieldReference(m_object, fromArch->GetObject(), fromAddr, &nameObj, offset);
+}
+
+
 Ref<LowLevelILFunction> Function::GetLowLevelIL() const
 {
 	return new LowLevelILFunction(BNGetFunctionLowLevelIL(m_object));

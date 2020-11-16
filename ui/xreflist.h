@@ -41,13 +41,16 @@ public:
 	{
 		DataXrefType,
 		CodeXrefType,
-		VariableXrefType
+		VariableXrefType,
+		TypeXrefType
 	};
 
 protected:
 	FunctionRef m_func;
 	ArchitectureRef m_arch;
 	uint64_t m_addr;
+	BinaryNinja::QualifiedName m_typeName;
+	uint64_t m_offset;
 	XrefType m_type;
 	XrefDirection m_direction;
 	mutable XrefHeader* m_parentItem;
@@ -57,7 +60,10 @@ protected:
 public:
 	explicit XrefItem();
 	explicit XrefItem(XrefHeader* parent, XrefType type, FunctionRef func);
-	explicit XrefItem(BinaryNinja::ReferenceSource referenceSource, XrefType type, XrefDirection direction);
+	// The three constructors are used for code/data/type referecens, respectively
+	explicit XrefItem(BinaryNinja::ReferenceSource ref, XrefType type, XrefDirection direction);
+	explicit XrefItem(uint64_t addr, XrefType type, XrefDirection direction);
+	explicit XrefItem(BinaryNinja::TypeReferenceSource ref, XrefType type, XrefDirection direction);
 	XrefItem(const XrefItem& ref);
 	virtual ~XrefItem();
 
@@ -65,6 +71,8 @@ public:
 	const FunctionRef& func() const { return m_func; }
 	const ArchitectureRef& arch() const { return m_arch; }
 	uint64_t addr() const { return m_addr; }
+	BinaryNinja::QualifiedName typeName() const { return m_typeName; }
+	uint64_t offset() const { return m_offset; }
 	XrefType type() const { return m_type; }
 	int size() const { return m_size; }
 	void setSize(int size) const { m_size = size; }
@@ -113,6 +121,20 @@ public:
 };
 
 
+class XrefTypeHeader : public XrefHeader
+{
+	std::deque<XrefItem*> m_refs;
+public:
+	XrefTypeHeader();
+	XrefTypeHeader(BinaryNinja::QualifiedName name, XrefHeader* parent, XrefItem* child);
+	XrefTypeHeader(const XrefTypeHeader& header);
+	virtual int childCount() const override { return (int)m_refs.size(); }
+	virtual void appendChild(XrefItem* ref) override;
+	virtual int row(const XrefItem* item) const override;
+	virtual XrefItem* child(int i) const override;
+};
+
+
 class XrefCodeReferences: public XrefHeader
 {
 	std::map<FunctionRef, XrefFunctionHeader*> m_refs;
@@ -136,6 +158,21 @@ public:
 	virtual ~XrefDataReferences();
 	virtual int childCount() const override { return (int)m_refs.size(); };
 	virtual void appendChild(XrefItem* ref) override;
+	virtual int row(const XrefItem* item) const override;
+	virtual XrefItem* child(int i) const override;
+};
+
+
+class XrefTypeReferences: public XrefHeader
+{
+	std::map<BinaryNinja::QualifiedName, XrefTypeHeader*> m_refs;
+	std::deque<XrefTypeHeader*> m_refList;
+public:
+	XrefTypeReferences(XrefHeader* parent);
+	virtual ~XrefTypeReferences();
+	virtual int childCount() const override { return (int)m_refs.size(); };
+	virtual void appendChild(XrefItem* ref) override;
+	XrefHeader* parentOf(XrefItem* ref) const;
 	virtual int row(const XrefItem* item) const override;
 	virtual XrefItem* child(int i) const override;
 };
@@ -243,6 +280,7 @@ class BINARYNINJAUIAPI CrossReferenceFilterProxyModel : public QSortFilterProxyM
 
 	bool m_showData = true;
 	bool m_showCode = true;
+	bool m_showType = true;
 	bool m_showIncoming = true;
 	bool m_showOutgoing = true;
 	bool m_table;
@@ -261,8 +299,8 @@ protected:
 	virtual bool hasChildren(const QModelIndex& parent) const override;
 
 public Q_SLOTS:
-	void directionChanged(int index);
-	void typeChanged(int index);
+	void directionChanged(int index, bool checked);
+	void typeChanged(int index, bool checked);
 	void resetFilter();
 };
 
@@ -278,7 +316,7 @@ public:
 	CrossReferenceContainer(CrossReferenceWidget* parent, ViewFrame* view, BinaryViewRef data);
 	virtual ~CrossReferenceContainer() {}
 	virtual QModelIndex translateIndex(const QModelIndex& idx) const = 0;
-	virtual bool getReference(const QModelIndex& idx, FunctionRef& func, uint64_t& addr) const = 0;
+	virtual bool getReference(const QModelIndex& idx, XrefItem** refPtr) const = 0;
 	virtual QModelIndex nextIndex() = 0;
 	virtual QModelIndex prevIndex() = 0;
 	virtual QModelIndexList selectedRows() const = 0;
@@ -300,7 +338,7 @@ class BINARYNINJAUIAPI CrossReferenceTree: public QTreeView, public CrossReferen
 
 protected:
 	void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const override;
-	virtual bool getReference(const QModelIndex& idx, FunctionRef& func, uint64_t& addr) const override;
+	virtual bool getReference(const QModelIndex& idx, XrefItem** refPtr) const override;
 
 public:
 	CrossReferenceTree(CrossReferenceWidget* parent, ViewFrame* view, BinaryViewRef data);
@@ -348,7 +386,7 @@ public:
 	virtual QModelIndex prevIndex() override;
 	virtual bool hasSelection() const override { return selectionModel()->selectedRows().size() != 0; }
 	virtual QModelIndexList selectedRows() const override { return selectionModel()->selectedRows(); }
-	virtual bool getReference(const QModelIndex& idx, FunctionRef& func, uint64_t& addr) const override;
+	virtual bool getReference(const QModelIndex& idx, XrefItem** refPtr) const override;
 	virtual void mouseMoveEvent(QMouseEvent* e) override;
 	virtual void mousePressEvent(QMouseEvent* e) override;
 	virtual void keyPressEvent(QKeyEvent* e) override;
@@ -364,6 +402,7 @@ Q_SIGNALS:
 };
 
 class ExpandableGroup;
+class QCheckboxCombo;
 class BINARYNINJAUIAPI CrossReferenceWidget: public QWidget, public DockContextHandler
 {
 	Q_OBJECT
@@ -374,7 +413,7 @@ class BINARYNINJAUIAPI CrossReferenceWidget: public QWidget, public DockContextH
 	QAbstractItemView* m_object;
 	QLabel* m_label;
 	QCheckBox* m_pinRefs;
-	QComboBox* m_direction, *m_type;
+	QCheckboxCombo *m_direction, *m_type;
 	CrossReferenceTable* m_table;
 	CrossReferenceTree* m_tree;
 	CrossReferenceContainer* m_container;
@@ -388,10 +427,8 @@ class BINARYNINJAUIAPI CrossReferenceWidget: public QWidget, public DockContextH
 	ExpandableGroup* m_group;
 
 	bool m_curRefTargetValid = false;
-	uint64_t m_curRefTarget = 0;
-	uint64_t m_curRefTargetEnd = 0;
-	uint64_t m_newRefTarget = 0;
-	uint64_t m_newRefTargetEnd = 0;
+	SelectionInfoForXref m_curRef;
+	SelectionInfoForXref m_newRef;
 	bool m_navigating = false;
 	bool m_navToNextOrPrevStarted = false;
 	bool m_pinned;
@@ -404,8 +441,9 @@ public:
 	virtual void notifyFontChanged() override;
 	virtual bool shouldBeVisible(ViewFrame* frame) override;
 
-	virtual void setCurrentSelection(uint64_t begin, uint64_t end);
-	virtual void setCurrentPinnedSelection(uint64_t begin, uint64_t end);
+	virtual QString getHeaderText(SelectionInfoForXref selectionInfo);
+	virtual void setCurrentSelection(SelectionInfoForXref selectionInfo);
+	virtual void setCurrentPinnedSelection(SelectionInfoForXref selectionInfo);
 	void updatePinnedSelection();
 	virtual void navigateToNext();
 	virtual void navigateToPrev();
@@ -427,8 +465,8 @@ public Q_SLOTS:
 	void referenceActivated(const QModelIndex& idx);
 	void pinnedStateChanged(bool state);
 	void selectionChanged();
-	void typeChanged(int change);
-	void directionChanged(int change);
+	void typeChanged(int index, bool checked);
+	void directionChanged(int change, bool checked);
 };
 
 
@@ -449,4 +487,33 @@ public:
 	explicit ExpandableGroup(const QString& title = "", QWidget* parent = nullptr);
 	void setContentLayout(QLayout* contentLayout);
 	void setTitle(const QString& title) { m_button->setText(title); }
+};
+
+
+// https://github.com/CuriousCrow/QCheckboxCombo
+/*
+ * QCheckboxCombo is a combobox widget that contains items with checkboxes
+ * User can select proper items by checking corresponding checkboxes.
+ * Resulting text will contain list of selected items separated by delimiter (", " by default)
+ */
+class BINARYNINJAUIAPI QCheckboxCombo : public QComboBox
+{
+	Q_OBJECT
+
+public:
+	explicit QCheckboxCombo(QWidget *parent = nullptr);
+	bool eventFilter(QObject* watched, QEvent* event);
+	void hidePopup();
+	void showPopup();
+	void addItem(const QString &text, bool checked = true);
+
+Q_SIGNALS:
+	void selectionChanged(const QString& text);
+	void itemToggled(int index, bool checked);
+
+private:
+	bool m_popupVisible = false;
+	bool m_editable = false;
+	QString m_selectionString;
+	const QString m_delimiter = ", ";
 };
