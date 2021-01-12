@@ -17,10 +17,10 @@
 // this struct is used to pass selection information for cross references
 struct SelectionInfoForXref
 {
-	// Check these booleans before accessing the address/type info,
+	// Check these booleans before accessing the address/type/variable info,
 	// since the invalid fields are not guaranteed to be initialized/zero-ed.
-	// At any given time, at most one of these three should be true.
-	bool addrValid, typeValid, typeFieldValid;
+	// At any given time, at most one of these four should be true.
+	bool addrValid, typeValid, typeFieldValid, localVarValid;
 
 	uint64_t start;
 	uint64_t end;
@@ -28,20 +28,28 @@ struct SelectionInfoForXref
 	BinaryNinja::QualifiedName type;
 	uint64_t offset;
 
+	BinaryNinja::Variable var;
+
+	// These two need to be tested against nullptr before de-referencing
+	FunctionRef func;
+	ArchitectureRef arch;
+
 	bool operator== (const SelectionInfoForXref& other) const 
 	{
+		// TODO: take func and arch into consideration
 		if (addrValid && other.addrValid)
 			return (start == other.start) && (end == other.end);
 		else if (typeValid && other.typeValid)
 			return type == other.type;
 		else if (typeFieldValid && other.typeFieldValid)
 			return (type == other.type) && (offset == other.offset);
+		else if (localVarValid && other.localVarValid)
+			return var == other.var;
 		return false;
 	}
 
 	bool operator!= (const SelectionInfoForXref& other) const { return !(*this == other); }
-
-	bool isValid() const { return addrValid || typeValid || typeFieldValid; }
+	bool isValid() const { return addrValid || typeValid || typeFieldValid || localVarValid; }
 };
 
 class BINARYNINJAUIAPI HistoryEntry: public BinaryNinja::RefCountObject

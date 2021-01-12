@@ -3670,6 +3670,13 @@ __attribute__ ((format (printf, 1, 2)))
 
 	BINARYNINJACOREAPI void BNRequestFunctionDebugReport(BNFunction* func, const char* name);
 
+	BINARYNINJACOREAPI BNReferenceSource* BNGetStackVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
+	BINARYNINJACOREAPI BNVariable* BNGetLocalVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
+		uint64_t address, size_t* count);
+	BINARYNINJACOREAPI BNVariable* BNGetLocalVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
+		uint64_t address, uint64_t len, size_t* count);
+	BINARYNINJACOREAPI void BNFreeVariableList(BNVariable* vars);
+
 	// Disassembly settings
 	BINARYNINJACOREAPI BNDisassemblySettings* BNCreateDisassemblySettings(void);
 	BINARYNINJACOREAPI BNDisassemblySettings* BNNewDisassemblySettingsReference(BNDisassemblySettings* settings);

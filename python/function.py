@@ -3050,6 +3050,53 @@ class Function(object):
 				functions.append(ref.function)
 		return functions
 
+	def get_variable_references(self, var):
+		"""
+		``get_variable_references`` returns a list of ReferenceSource objects (xrefs or cross-references)
+		that reference the given variable. The variable is a local variable that can be either on the stack,
+		in a register, or in a flag.
+		
+		:param Variable var: Variable for which to query the xref
+		:return: List of References for the given variable
+		:rtype: list(ReferenceSource)
+		:Example:
+
+			>>> var = current_mlil[0].operands[0]
+			>>> current_function.get_variable_references(var)
+		"""
+		count = ctypes.c_ulonglong(0)
+		var_data = core.BNVariable()
+		var_data.type = var.source_type
+		var_data.index = var.index
+		var_data.storage = var.storage
+		refs = core.BNGetStackVariableReferences(self.handle, var_data, count)
+		result = []
+		for i in range(0, count.value):
+			if refs[i].func:
+				func = binaryninja.function.Function(self, core.BNNewFunctionReference(refs[i].func))
+			else:
+				func = None
+			if refs[i].arch:
+				arch = binaryninja.architecture.CoreArchitecture._from_cache(refs[i].arch)
+			else:
+				arch = None
+			addr = refs[i].addr
+			result.append(binaryninja.architecture.ReferenceSource(func, arch, addr))
+		core.BNFreeCodeReferences(refs, count.value)
+		return result
+	
+	def get_variable_references_from(self, addr, length = None, arch = None):
+		result = []
+		count = ctypes.c_ulonglong(0)
+		if length is None:
+			refs = core.BNGetLocalVariableReferencesFrom(self.handle, self.arch.handle, addr, count)
+		else:
+			refs = core.BNGetLocalVariableReferencesInRange(self.handle, self.arch.handle, addr, length, count)
+		for i in range(0, count.value):
+			result.append(Variable(self, refs[i].type, refs[i].index, refs[i].storage))
+		core.BNFreeVariableList(refs)
+		return result
+
 
 class AdvancedFunctionAnalysisDataRequestor(object):
 	def __init__(self, func = None):
