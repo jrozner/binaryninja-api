@@ -51,6 +51,7 @@ protected:
 	uint64_t m_addr;
 	BinaryNinja::QualifiedName m_typeName;
 	uint64_t m_offset;
+	BinaryNinja::Variable m_var;
 	XrefType m_type;
 	XrefDirection m_direction;
 	mutable XrefHeader* m_parentItem;
@@ -60,10 +61,11 @@ protected:
 public:
 	explicit XrefItem();
 	explicit XrefItem(XrefHeader* parent, XrefType type, FunctionRef func);
-	// The three constructors are used for code/data/type referecens, respectively
+	// The four constructors are used for code/data/type/variable referecens, respectively
 	explicit XrefItem(BinaryNinja::ReferenceSource ref, XrefType type, XrefDirection direction);
 	explicit XrefItem(uint64_t addr, XrefType type, XrefDirection direction);
 	explicit XrefItem(BinaryNinja::TypeReferenceSource ref, XrefType type, XrefDirection direction);
+	explicit XrefItem(BinaryNinja::Variable var, FunctionRef func, XrefType type, XrefDirection direction);
 	XrefItem(const XrefItem& ref);
 	virtual ~XrefItem();
 
@@ -73,6 +75,7 @@ public:
 	uint64_t addr() const { return m_addr; }
 	BinaryNinja::QualifiedName typeName() const { return m_typeName; }
 	uint64_t offset() const { return m_offset; }
+	BinaryNinja::Variable variable() const { return m_var; }
 	XrefType type() const { return m_type; }
 	int size() const { return m_size; }
 	void setSize(int size) const { m_size = size; }
@@ -173,6 +176,19 @@ public:
 	virtual int childCount() const override { return (int)m_refs.size(); };
 	virtual void appendChild(XrefItem* ref) override;
 	XrefHeader* parentOf(XrefItem* ref) const;
+	virtual int row(const XrefItem* item) const override;
+	virtual XrefItem* child(int i) const override;
+};
+
+
+class XrefVariableReferences: public XrefHeader
+{
+	std::deque<XrefItem*> m_refs;
+public:
+	XrefVariableReferences(XrefHeader* parent);
+	virtual ~XrefVariableReferences();
+	virtual int childCount() const override { return (int)m_refs.size(); };
+	virtual void appendChild(XrefItem* ref) override;
 	virtual int row(const XrefItem* item) const override;
 	virtual XrefItem* child(int i) const override;
 };
@@ -281,6 +297,7 @@ class BINARYNINJAUIAPI CrossReferenceFilterProxyModel : public QSortFilterProxyM
 	bool m_showData = true;
 	bool m_showCode = true;
 	bool m_showType = true;
+	bool m_showVariable = true;
 	bool m_showIncoming = true;
 	bool m_showOutgoing = true;
 	bool m_table;

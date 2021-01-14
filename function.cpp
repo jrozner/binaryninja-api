@@ -2009,7 +2009,7 @@ vector<ReferenceSource> Function::GetStackVariableReferences(const Variable& var
 }
 
 
-vector<Variable> Function::GetStackVariableReferencesFrom(Architecture* arch, uint64_t addr)
+vector<Variable> Function::GetLocalVariableReferencesFrom(Architecture* arch, uint64_t addr)
 {
 	size_t count;
 	BNVariable* vars = BNGetLocalVariableReferencesFrom(m_object, arch->GetObject(), addr, &count);
@@ -2022,13 +2022,14 @@ vector<Variable> Function::GetStackVariableReferencesFrom(Architecture* arch, ui
 		var.index = vars[i].index;
 		var.storage = vars[i].storage;
 		var.type = vars[i].type;
+		result.push_back(var);
 	}
 	BNFreeVariableList(vars);
 	return result;
 }
 
 
-vector<Variable> Function::GetStackVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len)
+vector<Variable> Function::GetLocalVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len)
 {
 	size_t count;
 	BNVariable* vars = BNGetLocalVariableReferencesInRange(m_object, arch->GetObject(), addr, len, &count);
