@@ -55,12 +55,12 @@ static PADDING: [&'static str; 23] = [
 // TODO : This isn't comprehensive
 fn is_valid(view: &BinaryView) -> bool {
   view.section_by_name(".debug_info").is_ok()
-    || view.parent_view().is_ok()
+    || (view.parent_view().is_ok()
       && view
         .parent_view()
         .unwrap()
         .section_by_name(".debug_info")
-        .is_ok()
+        .is_ok())
 }
 
 // gimli::read::load only takes structures containing &[u8]'s, but we need to keep the data buffer alive until it's done using that

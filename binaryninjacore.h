@@ -179,6 +179,8 @@ extern "C"
 	struct BNDisassemblyTextRenderer;
 	struct BNLinearViewObject;
 	struct BNLinearViewCursor;
+	struct BNDebugInfo;
+	struct BNDebugInfoParser;
 
 	typedef bool (*BNLoadPluginCallback)(const char* repoPath, const char* pluginPath, bool force, void* ctx);
 
@@ -2447,6 +2449,18 @@ extern "C"
 		DefaultDeadStoreElimination,
 		PreventDeadStoreElimination,
 		AllowDeadStoreElimination
+	};
+
+	struct BNDebugFunctionInfo
+	{
+		char* shortName;
+		char* fullName;
+		char* rawName;
+		uint64_t address;
+		BNType* returnType;
+		char** parameterNames;
+		BNType** parameterTypes;
+		uint64_t parameterCount;
 	};
 
 	BINARYNINJACOREAPI char* BNAllocString(const char* contents);
@@ -4929,6 +4943,17 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI void BNRustFreeStringArray(const char** const, uint64_t);
 	BINARYNINJACOREAPI char** BNRustSimplifyStrToFQN(const char* const, bool);
 	BINARYNINJACOREAPI char* BNRustSimplifyStrToStr(const char* const);
+
+	BINARYNINJACOREAPI BNDebugInfoParser* BNRegisterDebugInfoParser(const char* name, bool (*isValid)(void*, BNBinaryView*), void (*parseInfo)(void*, BNDebugInfo*, BNBinaryView*), void* context);
+	BINARYNINJACOREAPI BNDebugInfoParser* BNGetDebugInfoParserByName(const char* name);
+	BINARYNINJACOREAPI BNDebugInfoParser** BNGetDebugInfoParsers(size_t* count);
+	BINARYNINJACOREAPI BNDebugInfoParser** BNGetDebugInfoParsersForView(BNBinaryView* view, size_t* count);
+	BINARYNINJACOREAPI void BNFreeDebugInfoParserList(BNDebugInfoParser** parsers, size_t count);
+	BINARYNINJACOREAPI char* BNGetDebugInfoParserName(BNDebugInfoParser* parser);
+	BINARYNINJACOREAPI bool BNIsDebugInfoParserValidForView(BNDebugInfoParser* parser, BNBinaryView* view);
+
+	BINARYNINJACOREAPI bool BNAddDebugType(BNDebugInfo* debugInfo, const char* const name, BNType* type);
+	BINARYNINJACOREAPI bool BNAddDebugFunction(BNDebugInfo* debugInfo, BNDebugFunctionInfo* func);
 
 #ifdef __cplusplus
 }
