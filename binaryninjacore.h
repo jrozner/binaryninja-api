@@ -3670,11 +3670,18 @@ __attribute__ ((format (printf, 1, 2)))
 
 	BINARYNINJACOREAPI void BNRequestFunctionDebugReport(BNFunction* func, const char* name);
 
-	BINARYNINJACOREAPI BNReferenceSource* BNGetStackVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
-	BINARYNINJACOREAPI BNVariable* BNGetLocalVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
+	BINARYNINJACOREAPI BNReferenceSource* BNGetMediumLevelILVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
+	BINARYNINJACOREAPI BNVariable* BNGetMediumLevelILVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, size_t* count);
-	BINARYNINJACOREAPI BNVariable* BNGetLocalVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
+	BINARYNINJACOREAPI BNVariable* BNGetMediumLevelILVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, uint64_t len, size_t* count);
+
+	BINARYNINJACOREAPI BNReferenceSource* BNGetHighLevelILVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
+	BINARYNINJACOREAPI BNVariable* BNGetHighLevelILVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
+		uint64_t address, size_t* count);
+	BINARYNINJACOREAPI BNVariable* BNGetHighLevelILVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
+		uint64_t address, uint64_t len, size_t* count);
+
 	BINARYNINJACOREAPI void BNFreeVariableList(BNVariable* vars);
 
 	// Disassembly settings

@@ -3351,6 +3351,7 @@ class BinaryView(object):
 
 		:param int addr: virtual address to query for references
 		:param int length: optional length of query
+		:param Architecture arch: optional architecture of query
 		:return: list of integers
 		:rtype: list(integer)
 		"""

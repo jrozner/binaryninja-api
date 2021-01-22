@@ -14,6 +14,16 @@
 #include "viewtype.h"
 #include "action.h"
 
+enum XrefILSource
+{
+	UnspecifiedILSource,
+	DisassemblySource,
+	LowLevelILSource,
+	MediumLevelILSource,
+	HighLevelIlSource,
+	NotFromILSource
+};
+
 // this struct is used to pass selection information for cross references
 struct SelectionInfoForXref
 {
@@ -21,6 +31,8 @@ struct SelectionInfoForXref
 	// since the invalid fields are not guaranteed to be initialized/zero-ed.
 	// At any given time, at most one of these four should be true.
 	bool addrValid, typeValid, typeFieldValid, localVarValid;
+
+	XrefILSource ilSource;
 
 	uint64_t start;
 	uint64_t end;

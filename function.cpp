@@ -1982,7 +1982,7 @@ void Function::SetVariableDeadStoreElimination(const Variable& var, BNDeadStoreE
 }
 
 
-vector<ReferenceSource> Function::GetStackVariableReferences(const Variable& var)
+vector<ReferenceSource> Function::GetMediumLevelILVariableReferences(const Variable& var)
 {
 	size_t count;
 
@@ -1991,7 +1991,7 @@ vector<ReferenceSource> Function::GetStackVariableReferences(const Variable& var
 	varData.index = var.index;
 	varData.storage = var.storage;
 	
-	BNReferenceSource* refs = BNGetStackVariableReferences(m_object, &varData, &count);
+	BNReferenceSource* refs = BNGetMediumLevelILVariableReferences(m_object, &varData, &count);
 
 	vector<ReferenceSource> result;
 	result.reserve(count);
@@ -2009,10 +2009,10 @@ vector<ReferenceSource> Function::GetStackVariableReferences(const Variable& var
 }
 
 
-vector<Variable> Function::GetLocalVariableReferencesFrom(Architecture* arch, uint64_t addr)
+vector<Variable> Function::GetMediumLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr)
 {
 	size_t count;
-	BNVariable* vars = BNGetLocalVariableReferencesFrom(m_object, arch->GetObject(), addr, &count);
+	BNVariable* vars = BNGetMediumLevelILVariableReferencesFrom(m_object, arch->GetObject(), addr, &count);
 
 	vector<Variable> result;
 	result.reserve(count);
@@ -2029,10 +2029,76 @@ vector<Variable> Function::GetLocalVariableReferencesFrom(Architecture* arch, ui
 }
 
 
-vector<Variable> Function::GetLocalVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len)
+vector<Variable> Function::GetMediumLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len)
 {
 	size_t count;
-	BNVariable* vars = BNGetLocalVariableReferencesInRange(m_object, arch->GetObject(), addr, len, &count);
+	BNVariable* vars = BNGetMediumLevelILVariableReferencesInRange(m_object, arch->GetObject(), addr, len, &count);
+
+	vector<Variable> result;
+	result.reserve(count);
+	for (size_t i = 0; i < count; i++)
+	{
+		Variable var;
+		var.index = vars[i].index;
+		var.storage = vars[i].storage;
+		var.type = vars[i].type;
+		result.push_back(var);
+	}
+	BNFreeVariableList(vars);
+	return result;
+}
+
+
+vector<ReferenceSource> Function::GetHighLevelILVariableReferences(const Variable& var)
+{
+	size_t count;
+
+	BNVariable varData;
+	varData.type = var.type;
+	varData.index = var.index;
+	varData.storage = var.storage;
+	
+	BNReferenceSource* refs = BNGetHighLevelILVariableReferences(m_object, &varData, &count);
+
+	vector<ReferenceSource> result;
+	result.reserve(count);
+	for (size_t i = 0; i < count; i++)
+	{
+		ReferenceSource src;
+		src.func = new Function(BNNewFunctionReference(refs[i].func));
+		src.arch = new CoreArchitecture(refs[i].arch);
+		src.addr = refs[i].addr;
+		result.push_back(src);
+	}
+
+	BNFreeCodeReferences(refs, count);
+	return result;
+}
+
+
+vector<Variable> Function::GetHighLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr)
+{
+	size_t count;
+	BNVariable* vars = BNGetMediumLevelILVariableReferencesFrom(m_object, arch->GetObject(), addr, &count);
+
+	vector<Variable> result;
+	result.reserve(count);
+	for (size_t i = 0; i < count; i++)
+	{
+		Variable var;
+		var.index = vars[i].index;
+		var.storage = vars[i].storage;
+		var.type = vars[i].type;
+	}
+	BNFreeVariableList(vars);
+	return result;
+}
+
+
+vector<Variable> Function::GetHighLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len)
+{
+	size_t count;
+	BNVariable* vars = BNGetMediumLevelILVariableReferencesInRange(m_object, arch->GetObject(), addr, len, &count);
 
 	vector<Variable> result;
 	result.reserve(count);

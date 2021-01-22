@@ -3050,11 +3050,14 @@ class Function(object):
 				functions.append(ref.function)
 		return functions
 
-	def get_variable_references(self, var):
+	def get_mlil_variable_references(self, var):
 		"""
-		``get_variable_references`` returns a list of ReferenceSource objects (xrefs or cross-references)
+		``get_mlil_variable_references`` returns a list of ReferenceSource objects (xrefs or cross-references)
 		that reference the given variable. The variable is a local variable that can be either on the stack,
 		in a register, or in a flag.
+		This function is related to get_hlil_variable_references(), which returns variable references collected
+		from HLIL. The two can be different in several cases, e.g., multiple variables in MLIL can be merged
+		into a single variable in HLIL.
 		
 		:param Variable var: Variable for which to query the xref
 		:return: List of References for the given variable
@@ -3062,14 +3065,14 @@ class Function(object):
 		:Example:
 
 			>>> var = current_mlil[0].operands[0]
-			>>> current_function.get_variable_references(var)
+			>>> current_function.get_mlil_variable_references(var)
 		"""
 		count = ctypes.c_ulonglong(0)
 		var_data = core.BNVariable()
 		var_data.type = var.source_type
 		var_data.index = var.index
 		var_data.storage = var.storage
-		refs = core.BNGetStackVariableReferences(self.handle, var_data, count)
+		refs = core.BNGetMediumLevelILVariableReferences(self.handle, var_data, count)
 		result = []
 		for i in range(0, count.value):
 			if refs[i].func:
@@ -3085,13 +3088,87 @@ class Function(object):
 		core.BNFreeCodeReferences(refs, count.value)
 		return result
 	
-	def get_variable_references_from(self, addr, length = None, arch = None):
+	def get_mlil_variable_references_from(self, addr, length = None, arch = None):
+		"""
+		``get_mlil_variable_references`` returns a list of variables referenced by code in the function ``func``,
+		of the architecture ``arch``, and at the address ``addr``. If no function is specified, references from
+		all functions and containing the address will be returned. If no architecture is specified, the
+		architecture of the function will be used.
+		This function is related to get_hlil_variable_references_from(), which returns variable references collected
+		from HLIL. The two can be different in several cases, e.g., multiple variables in MLIL can be merged
+		into a single variable in HLIL.
+
+		:param int addr: virtual address to query for variable references
+		:param int length: optional length of query
+		:param Architecture arch: optional architecture of query
+		:return: list of variables
+		:rtype: list(Variable)
+		"""
 		result = []
 		count = ctypes.c_ulonglong(0)
 		if length is None:
-			refs = core.BNGetLocalVariableReferencesFrom(self.handle, self.arch.handle, addr, count)
+			refs = core.BNGetMediumLevelILVariableReferencesFrom(self.handle, self.arch.handle, addr, count)
 		else:
-			refs = core.BNGetLocalVariableReferencesInRange(self.handle, self.arch.handle, addr, length, count)
+			refs = core.BNGetMediumLevelILVariableReferencesInRange(self.handle, self.arch.handle, addr, length, count)
+		for i in range(0, count.value):
+			result.append(Variable(self, refs[i].type, refs[i].index, refs[i].storage))
+		core.BNFreeVariableList(refs)
+		return result
+
+	def get_hlil_variable_references(self, var):
+		"""
+		``get_hlil_variable_references`` returns a list of ReferenceSource objects (xrefs or cross-references)
+		that reference the given variable. The variable is a local variable that can be either on the stack,
+		in a register, or in a flag.
+		
+		:param Variable var: Variable for which to query the xref
+		:return: List of References for the given variable
+		:rtype: list(ReferenceSource)
+		:Example:
+
+			>>> var = current_hlil[0].operands[0]
+			>>> current_function.get_hlil_variable_references(var)
+		"""
+		count = ctypes.c_ulonglong(0)
+		var_data = core.BNVariable()
+		var_data.type = var.source_type
+		var_data.index = var.index
+		var_data.storage = var.storage
+		refs = core.BNGetHighLevelILVariableReferences(self.handle, var_data, count)
+		result = []
+		for i in range(0, count.value):
+			if refs[i].func:
+				func = binaryninja.function.Function(self, core.BNNewFunctionReference(refs[i].func))
+			else:
+				func = None
+			if refs[i].arch:
+				arch = binaryninja.architecture.CoreArchitecture._from_cache(refs[i].arch)
+			else:
+				arch = None
+			addr = refs[i].addr
+			result.append(binaryninja.architecture.ReferenceSource(func, arch, addr))
+		core.BNFreeCodeReferences(refs, count.value)
+		return result
+	
+	def get_hlil_variable_references_from(self, addr, length = None, arch = None):
+		"""
+		``get_hlil_variable_references_from`` returns a list of variables referenced by code in the function ``func``,
+		of the architecture ``arch``, and at the address ``addr``. If no function is specified, references from
+		all functions and containing the address will be returned. If no architecture is specified, the
+		architecture of the function will be used.
+
+		:param int addr: virtual address to query for variable references
+		:param int length: optional length of query
+		:param Architecture arch: optional architecture of query
+		:return: list of variables
+		:rtype: list(Variable)
+		"""
+		result = []
+		count = ctypes.c_ulonglong(0)
+		if length is None:
+			refs = core.BNGetHighLevelILVariableReferencesFrom(self.handle, self.arch.handle, addr, count)
+		else:
+			refs = core.BNGetHighLevelILVariableReferencesInRange(self.handle, self.arch.handle, addr, length, count)
 		for i in range(0, count.value):
 			result.append(Variable(self, refs[i].type, refs[i].index, refs[i].storage))
 		core.BNFreeVariableList(refs)

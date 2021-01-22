@@ -3111,9 +3111,13 @@ __attribute__ ((format (printf, 1, 2)))
 		std::vector<StackVariableReference> GetStackVariablesReferencedByInstruction(Architecture* arch, uint64_t addr);
 		std::vector<BNConstantReference> GetConstantsReferencedByInstruction(Architecture* arch, uint64_t addr);
 
-		std::vector<ReferenceSource> GetStackVariableReferences(const Variable& var);
-		std::vector<Variable> GetLocalVariableReferencesFrom(Architecture* arch, uint64_t addr);
-		std::vector<Variable> GetLocalVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
+		std::vector<ReferenceSource> GetMediumLevelILVariableReferences(const Variable& var);
+		std::vector<Variable> GetMediumLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr);
+		std::vector<Variable> GetMediumLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
+
+		std::vector<ReferenceSource> GetHighLevelILVariableReferences(const Variable& var);
+		std::vector<Variable> GetHighLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr);
+		std::vector<Variable> GetHighLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
 
 		Ref<LowLevelILFunction> GetLiftedIL() const;
 		Ref<LowLevelILFunction> GetLiftedILIfAvailable() const;
