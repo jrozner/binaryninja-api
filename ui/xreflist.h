@@ -65,7 +65,7 @@ public:
 	explicit XrefItem(BinaryNinja::ReferenceSource ref, XrefType type, XrefDirection direction);
 	explicit XrefItem(uint64_t addr, XrefType type, XrefDirection direction);
 	explicit XrefItem(BinaryNinja::TypeReferenceSource ref, XrefType type, XrefDirection direction);
-	explicit XrefItem(BinaryNinja::Variable var, FunctionRef func, XrefType type, XrefDirection direction);
+	explicit XrefItem(BinaryNinja::Variable var, BinaryNinja::ReferenceSource ref, XrefType type, XrefDirection direction);
 	XrefItem(const XrefItem& ref);
 	virtual ~XrefItem();
 
@@ -138,6 +138,20 @@ public:
 };
 
 
+class XrefVariableHeader : public XrefHeader
+{
+	std::deque<XrefItem*> m_refs;
+public:
+	XrefVariableHeader();
+	XrefVariableHeader(XrefHeader* parent, XrefItem* child);
+	XrefVariableHeader(const XrefVariableHeader& header);
+	virtual int childCount() const override { return (int)m_refs.size(); }
+	virtual void appendChild(XrefItem* ref) override;
+	virtual int row(const XrefItem* item) const override;
+	virtual XrefItem* child(int i) const override;
+};
+
+
 class XrefCodeReferences: public XrefHeader
 {
 	std::map<FunctionRef, XrefFunctionHeader*> m_refs;
@@ -183,12 +197,14 @@ public:
 
 class XrefVariableReferences: public XrefHeader
 {
-	std::deque<XrefItem*> m_refs;
+	std::map<BinaryNinja::Variable, XrefVariableHeader*> m_refs;
+	std::deque<XrefVariableHeader*> m_refList;
 public:
 	XrefVariableReferences(XrefHeader* parent);
 	virtual ~XrefVariableReferences();
 	virtual int childCount() const override { return (int)m_refs.size(); };
 	virtual void appendChild(XrefItem* ref) override;
+	XrefHeader* parentOf(XrefItem* ref) const;
 	virtual int row(const XrefItem* item) const override;
 	virtual XrefItem* child(int i) const override;
 };
@@ -196,7 +212,7 @@ public:
 
 class XrefRoot: public XrefHeader
 {
-	std::map<int, XrefHeader*> m_refs;
+	std::map<XrefItem::XrefType, XrefHeader*> m_refs;
 public:
 	XrefRoot();
 	XrefRoot(XrefRoot&& root);
@@ -506,6 +522,8 @@ public:
 	void setTitle(const QString& title) { m_button->setText(title); }
 };
 
+
+static QVariant GetVariableLineTokens(QWidget* owner, const XrefItem& ref, bool flatten);
 
 // https://github.com/CuriousCrow/QCheckboxCombo
 /*
