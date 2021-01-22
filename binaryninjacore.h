@@ -1727,6 +1727,12 @@ extern "C"
 		uint64_t addr;
 	};
 
+	struct BNVariableReferenceSource
+	{
+		BNVariable var;
+		BNReferenceSource source;
+	};
+
 	struct BNTypeField
 	{
 		BNQualifiedName name;
@@ -3671,18 +3677,19 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI void BNRequestFunctionDebugReport(BNFunction* func, const char* name);
 
 	BINARYNINJACOREAPI BNReferenceSource* BNGetMediumLevelILVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
-	BINARYNINJACOREAPI BNVariable* BNGetMediumLevelILVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
+	BINARYNINJACOREAPI BNVariableReferenceSource* BNGetMediumLevelILVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, size_t* count);
-	BINARYNINJACOREAPI BNVariable* BNGetMediumLevelILVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
+	BINARYNINJACOREAPI BNVariableReferenceSource* BNGetMediumLevelILVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, uint64_t len, size_t* count);
 
 	BINARYNINJACOREAPI BNReferenceSource* BNGetHighLevelILVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
-	BINARYNINJACOREAPI BNVariable* BNGetHighLevelILVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
+	BINARYNINJACOREAPI BNVariableReferenceSource* BNGetHighLevelILVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, size_t* count);
-	BINARYNINJACOREAPI BNVariable* BNGetHighLevelILVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
+	BINARYNINJACOREAPI BNVariableReferenceSource* BNGetHighLevelILVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, uint64_t len, size_t* count);
 
 	BINARYNINJACOREAPI void BNFreeVariableList(BNVariable* vars);
+	BINARYNINJACOREAPI void BNFreeVariableReferenceSourceList(BNVariableReferenceSource* vars, size_t count);
 
 	// Disassembly settings
 	BINARYNINJACOREAPI BNDisassemblySettings* BNCreateDisassemblySettings(void);

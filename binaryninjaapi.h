@@ -2536,6 +2536,12 @@ __attribute__ ((format (printf, 1, 2)))
 		static Variable FromIdentifier(uint64_t id);
 	};
 
+	struct VariableReferenceSource
+	{
+		Variable var;
+		ReferenceSource source;
+	};
+
 	struct FunctionParameter
 	{
 		std::string name;
@@ -3112,12 +3118,12 @@ __attribute__ ((format (printf, 1, 2)))
 		std::vector<BNConstantReference> GetConstantsReferencedByInstruction(Architecture* arch, uint64_t addr);
 
 		std::vector<ReferenceSource> GetMediumLevelILVariableReferences(const Variable& var);
-		std::vector<Variable> GetMediumLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr);
-		std::vector<Variable> GetMediumLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
+		std::vector<VariableReferenceSource> GetMediumLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr);
+		std::vector<VariableReferenceSource> GetMediumLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
 
 		std::vector<ReferenceSource> GetHighLevelILVariableReferences(const Variable& var);
-		std::vector<Variable> GetHighLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr);
-		std::vector<Variable> GetHighLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
+		std::vector<VariableReferenceSource> GetHighLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr);
+		std::vector<VariableReferenceSource> GetHighLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
 
 		Ref<LowLevelILFunction> GetLiftedIL() const;
 		Ref<LowLevelILFunction> GetLiftedILIfAvailable() const;
