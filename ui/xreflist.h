@@ -52,7 +52,7 @@ protected:
 	BinaryNinja::QualifiedName m_typeName;
 	uint64_t m_offset;
 	BinaryNinja::Variable m_var;
-	BNILType m_ilType;
+	BNFunctionGraphType m_ilType;
 	size_t m_exprId;
 	XrefType m_type;
 	XrefDirection m_direction;
@@ -78,7 +78,7 @@ public:
 	BinaryNinja::QualifiedName typeName() const { return m_typeName; }
 	uint64_t offset() const { return m_offset; }
 	BinaryNinja::Variable variable() const { return m_var; }
-	BNILType ilType() const { return m_ilType; }
+	BNFunctionGraphType ilType() const { return m_ilType; }
 	size_t exprId() const { return m_exprId; }
 	XrefType type() const { return m_type; }
 	int size() const { return m_size; }
@@ -530,8 +530,6 @@ public:
 	void setTitle(const QString& title) { m_button->setText(title); }
 };
 
-
-static QVariant GetVariableLineTokens(QWidget* owner, const XrefItem& ref, bool flatten);
 
 // https://github.com/CuriousCrow/QCheckboxCombo
 /*

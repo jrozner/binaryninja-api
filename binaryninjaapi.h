@@ -1199,7 +1199,7 @@ __attribute__ ((format (printf, 1, 2)))
 		Ref<Function> func;
 		Ref<Architecture> arch;
 		uint64_t addr;
-		BNILType type;
+		BNFunctionGraphType type;
 		size_t exprId;
 	};
 

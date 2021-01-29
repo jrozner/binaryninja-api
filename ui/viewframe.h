@@ -332,6 +332,8 @@ public:
 	bool navigate(BinaryViewRef data, uint64_t offset, bool updateInfo = true, bool addHistoryEntry = true);
 	bool navigateToFunction(FunctionRef func, uint64_t offset, bool updateInfo = true, bool addHistoryEntry = true);
 	bool goToReference(BinaryViewRef data, FunctionRef func, uint64_t source, uint64_t target, bool addHistoryEntry = true);
+	bool navigateToViewLocation(BinaryViewRef data, const ViewLocation& viewLocation,
+		bool addHistoryEntry = true);
 	QString getTypeForView(QWidget* view);
 	QString getDataTypeForView(const QString& type);
 	QString getDataTypeForView(QWidget* view);

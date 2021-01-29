@@ -575,22 +575,6 @@ extern "C"
 		HighLevelILSSAFormFunctionGraph = 9
 	};
 
-	enum BNILType
-	{
-		DisassemblyILType = 0,
-		LowLevelILType = 1,
-		LiftedILType = 2,
-		LowLevelILSSAFormType = 3,
-		MediumLevelILType = 4,
-		MediumLevelILSSAFormType = 5,
-		MappedMediumLevelILType = 6,
-		MappedMediumLevelILSSAFormType = 7,
-		HighLevelILType = 8,
-		HighLevelILSSAFormType = 9,
-
-		UnspecifiedILType = 1000
-	};
-
 	enum BNDisassemblyOption
 	{
 		ShowAddress = 0,
@@ -1754,7 +1738,7 @@ extern "C"
 		BNFunction* func;
 		BNArchitecture* arch;
 		uint64_t addr;
-		BNILType type;
+		BNFunctionGraphType type;
 		size_t exprId;
 	};
 
