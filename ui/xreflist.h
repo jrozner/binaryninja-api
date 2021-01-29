@@ -52,6 +52,8 @@ protected:
 	BinaryNinja::QualifiedName m_typeName;
 	uint64_t m_offset;
 	BinaryNinja::Variable m_var;
+	BNILType m_ilType;
+	size_t m_exprId;
 	XrefType m_type;
 	XrefDirection m_direction;
 	mutable XrefHeader* m_parentItem;
@@ -65,7 +67,7 @@ public:
 	explicit XrefItem(BinaryNinja::ReferenceSource ref, XrefType type, XrefDirection direction);
 	explicit XrefItem(uint64_t addr, XrefType type, XrefDirection direction);
 	explicit XrefItem(BinaryNinja::TypeReferenceSource ref, XrefType type, XrefDirection direction);
-	explicit XrefItem(BinaryNinja::Variable var, BinaryNinja::ReferenceSource ref, XrefType type, XrefDirection direction);
+	explicit XrefItem(BinaryNinja::Variable var, BinaryNinja::ILReferenceSource ref, XrefType type, XrefDirection direction);
 	XrefItem(const XrefItem& ref);
 	virtual ~XrefItem();
 
@@ -76,6 +78,8 @@ public:
 	BinaryNinja::QualifiedName typeName() const { return m_typeName; }
 	uint64_t offset() const { return m_offset; }
 	BinaryNinja::Variable variable() const { return m_var; }
+	BNILType ilType() const { return m_ilType; }
+	size_t exprId() const { return m_exprId; }
 	XrefType type() const { return m_type; }
 	int size() const { return m_size; }
 	void setSize(int size) const { m_size = size; }
@@ -231,10 +235,11 @@ class BINARYNINJAUIAPI CrossReferenceTreeModel : public QAbstractItemModel
 	XrefRoot* m_rootItem;
 	QWidget* m_owner;
 	BinaryViewRef m_data;
+	ViewFrame* m_view;
 	std::vector<XrefItem> m_refs;
 
 public:
-	CrossReferenceTreeModel(QWidget* parent, BinaryViewRef data);
+	CrossReferenceTreeModel(QWidget* parent, BinaryViewRef data, ViewFrame* view);
 	virtual ~CrossReferenceTreeModel() {}
 
 	virtual QModelIndex index(int row, int col, const QModelIndex& parent = QModelIndex()) const override;
@@ -250,6 +255,7 @@ public:
 	XrefRoot* getRoot() { return m_rootItem; }
 	bool setModelData(std::vector<XrefItem>& refs, QItemSelectionModel* selectionModel, bool& selectionUpdated);
 	int leafCount() const;
+	ViewFrame* getView() const { return m_view; }
 };
 
 
@@ -259,6 +265,7 @@ class BINARYNINJAUIAPI CrossReferenceTableModel : public QAbstractTableModel
 
 	QWidget* m_owner;
 	BinaryViewRef m_data;
+	ViewFrame* m_view;
 	std::vector<XrefItem> m_refs;
 public:
 	enum ColumnHeaders
@@ -269,7 +276,7 @@ public:
 		Preview = 3
 	};
 
-	CrossReferenceTableModel(QWidget* parent, BinaryViewRef data);
+	CrossReferenceTableModel(QWidget* parent, BinaryViewRef data, ViewFrame* view);
 	virtual ~CrossReferenceTableModel() {}
 
 	virtual QModelIndex index(int row, int col, const QModelIndex& parent = QModelIndex()) const override;
@@ -282,6 +289,7 @@ public:
 	virtual bool hasChildren(const QModelIndex&) const override { return false; }
 	bool setModelData(std::vector<XrefItem>& refs, QItemSelectionModel* selectionModel, bool& selectionUpdated);
 	const XrefItem& getRow(int idx);
+	ViewFrame* getView() const { return m_view; }
 };
 
 

@@ -1194,6 +1194,15 @@ __attribute__ ((format (printf, 1, 2)))
 		uint64_t addr;
 	};
 
+	struct ILReferenceSource
+	{
+		Ref<Function> func;
+		Ref<Architecture> arch;
+		uint64_t addr;
+		BNILType type;
+		size_t exprId;
+	};
+
 	struct TypeReferenceSource
 	{
 		QualifiedName name;
@@ -3117,11 +3126,11 @@ __attribute__ ((format (printf, 1, 2)))
 		std::vector<StackVariableReference> GetStackVariablesReferencedByInstruction(Architecture* arch, uint64_t addr);
 		std::vector<BNConstantReference> GetConstantsReferencedByInstruction(Architecture* arch, uint64_t addr);
 
-		std::vector<ReferenceSource> GetMediumLevelILVariableReferences(const Variable& var);
+		std::vector<ILReferenceSource> GetMediumLevelILVariableReferences(const Variable& var);
 		std::vector<VariableReferenceSource> GetMediumLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr);
 		std::vector<VariableReferenceSource> GetMediumLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
 
-		std::vector<ReferenceSource> GetHighLevelILVariableReferences(const Variable& var);
+		std::vector<ILReferenceSource> GetHighLevelILVariableReferences(const Variable& var);
 		std::vector<VariableReferenceSource> GetHighLevelILVariableReferencesFrom(Architecture* arch, uint64_t addr);
 		std::vector<VariableReferenceSource> GetHighLevelILVariableReferencesInRange(Architecture* arch, uint64_t addr, uint64_t len);
 
@@ -4441,6 +4450,7 @@ __attribute__ ((format (printf, 1, 2)))
 
 		std::vector<DisassemblyTextLine> GetExprText(ExprId expr, bool asFullAst = true);
 		std::vector<DisassemblyTextLine> GetExprText(const HighLevelILInstruction& instr, bool asFullAst = true);
+		std::vector<DisassemblyTextLine> GetInstructionText(size_t i, bool asFullAst = true);
 
 		Confidence<Ref<Type>> GetExprType(size_t expr);
 		Confidence<Ref<Type>> GetExprType(const HighLevelILInstruction& expr);
@@ -5371,6 +5381,7 @@ __attribute__ ((format (printf, 1, 2)))
 		DisassemblyTextRenderer(Function* func, DisassemblySettings* settings = nullptr);
 		DisassemblyTextRenderer(LowLevelILFunction* func, DisassemblySettings* settings = nullptr);
 		DisassemblyTextRenderer(MediumLevelILFunction* func, DisassemblySettings* settings = nullptr);
+		DisassemblyTextRenderer(HighLevelILFunction* func, DisassemblySettings* settings = nullptr);
 		DisassemblyTextRenderer(BNDisassemblyTextRenderer* renderer);
 
 		Ref<Function> GetFunction() const;

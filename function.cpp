@@ -1982,7 +1982,7 @@ void Function::SetVariableDeadStoreElimination(const Variable& var, BNDeadStoreE
 }
 
 
-vector<ReferenceSource> Function::GetMediumLevelILVariableReferences(const Variable& var)
+vector<ILReferenceSource> Function::GetMediumLevelILVariableReferences(const Variable& var)
 {
 	size_t count;
 
@@ -1991,20 +1991,22 @@ vector<ReferenceSource> Function::GetMediumLevelILVariableReferences(const Varia
 	varData.index = var.index;
 	varData.storage = var.storage;
 	
-	BNReferenceSource* refs = BNGetMediumLevelILVariableReferences(m_object, &varData, &count);
+	BNILReferenceSource* refs = BNGetMediumLevelILVariableReferences(m_object, &varData, &count);
 
-	vector<ReferenceSource> result;
+	vector<ILReferenceSource> result;
 	result.reserve(count);
 	for (size_t i = 0; i < count; i++)
 	{
-		ReferenceSource src;
+		ILReferenceSource src;
 		src.func = new Function(BNNewFunctionReference(refs[i].func));
 		src.arch = new CoreArchitecture(refs[i].arch);
 		src.addr = refs[i].addr;
+		src.type = refs[i].type;
+		src.exprId = refs[i].exprId;
 		result.push_back(src);
 	}
 
-	BNFreeCodeReferences(refs, count);
+	BNFreeILReferences(refs, count);
 	return result;
 }
 
@@ -2061,7 +2063,7 @@ vector<VariableReferenceSource> Function::GetMediumLevelILVariableReferencesInRa
 }
 
 
-vector<ReferenceSource> Function::GetHighLevelILVariableReferences(const Variable& var)
+vector<ILReferenceSource> Function::GetHighLevelILVariableReferences(const Variable& var)
 {
 	size_t count;
 
@@ -2070,20 +2072,22 @@ vector<ReferenceSource> Function::GetHighLevelILVariableReferences(const Variabl
 	varData.index = var.index;
 	varData.storage = var.storage;
 	
-	BNReferenceSource* refs = BNGetHighLevelILVariableReferences(m_object, &varData, &count);
+	BNILReferenceSource* refs = BNGetHighLevelILVariableReferences(m_object, &varData, &count);
 
-	vector<ReferenceSource> result;
+	vector<ILReferenceSource> result;
 	result.reserve(count);
 	for (size_t i = 0; i < count; i++)
 	{
-		ReferenceSource src;
+		ILReferenceSource src;
 		src.func = new Function(BNNewFunctionReference(refs[i].func));
 		src.arch = new CoreArchitecture(refs[i].arch);
 		src.addr = refs[i].addr;
+		src.type = refs[i].type;
+		src.exprId = refs[i].exprId;
 		result.push_back(src);
 	}
 
-	BNFreeCodeReferences(refs, count);
+	BNFreeILReferences(refs, count);
 	return result;
 }
 

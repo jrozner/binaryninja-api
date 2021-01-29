@@ -575,6 +575,22 @@ extern "C"
 		HighLevelILSSAFormFunctionGraph = 9
 	};
 
+	enum BNILType
+	{
+		DisassemblyILType = 0,
+		LowLevelILType = 1,
+		LiftedILType = 2,
+		LowLevelILSSAFormType = 3,
+		MediumLevelILType = 4,
+		MediumLevelILSSAFormType = 5,
+		MappedMediumLevelILType = 6,
+		MappedMediumLevelILSSAFormType = 7,
+		HighLevelILType = 8,
+		HighLevelILSSAFormType = 9,
+
+		UnspecifiedILType = 1000
+	};
+
 	enum BNDisassemblyOption
 	{
 		ShowAddress = 0,
@@ -1731,6 +1747,15 @@ extern "C"
 	{
 		BNVariable var;
 		BNReferenceSource source;
+	};
+
+	struct BNILReferenceSource
+	{
+		BNFunction* func;
+		BNArchitecture* arch;
+		uint64_t addr;
+		BNILType type;
+		size_t exprId;
 	};
 
 	struct BNTypeField
@@ -3313,6 +3338,7 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI BNReferenceSource* BNGetCodeReferencesInRange(BNBinaryView* view, uint64_t addr,
 	                                                                 uint64_t len, size_t* count);
 	BINARYNINJACOREAPI void BNFreeCodeReferences(BNReferenceSource* refs, size_t count);
+	BINARYNINJACOREAPI void BNFreeILReferences(BNILReferenceSource* refs, size_t count);
 	BINARYNINJACOREAPI uint64_t* BNGetCodeReferencesFrom(BNBinaryView* view, BNReferenceSource* src, size_t* count);
 	BINARYNINJACOREAPI uint64_t* BNGetCodeReferencesFromInRange(BNBinaryView* view, BNReferenceSource* src, uint64_t len, size_t* count);
 
@@ -3676,13 +3702,13 @@ __attribute__ ((format (printf, 1, 2)))
 
 	BINARYNINJACOREAPI void BNRequestFunctionDebugReport(BNFunction* func, const char* name);
 
-	BINARYNINJACOREAPI BNReferenceSource* BNGetMediumLevelILVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
+	BINARYNINJACOREAPI BNILReferenceSource* BNGetMediumLevelILVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
 	BINARYNINJACOREAPI BNVariableReferenceSource* BNGetMediumLevelILVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, size_t* count);
 	BINARYNINJACOREAPI BNVariableReferenceSource* BNGetMediumLevelILVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, uint64_t len, size_t* count);
 
-	BINARYNINJACOREAPI BNReferenceSource* BNGetHighLevelILVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
+	BINARYNINJACOREAPI BNILReferenceSource* BNGetHighLevelILVariableReferences(BNFunction* func, BNVariable* var, size_t * count);
 	BINARYNINJACOREAPI BNVariableReferenceSource* BNGetHighLevelILVariableReferencesFrom(BNFunction* func, BNArchitecture* arch,
 		uint64_t address, size_t* count);
 	BINARYNINJACOREAPI BNVariableReferenceSource* BNGetHighLevelILVariableReferencesInRange(BNFunction* func, BNArchitecture* arch,
