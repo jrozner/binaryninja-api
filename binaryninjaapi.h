@@ -2548,7 +2548,7 @@ __attribute__ ((format (printf, 1, 2)))
 	struct VariableReferenceSource
 	{
 		Variable var;
-		ReferenceSource source;
+		ILReferenceSource source;
 	};
 
 	struct FunctionParameter

@@ -1727,12 +1727,6 @@ extern "C"
 		uint64_t addr;
 	};
 
-	struct BNVariableReferenceSource
-	{
-		BNVariable var;
-		BNReferenceSource source;
-	};
-
 	struct BNILReferenceSource
 	{
 		BNFunction* func;
@@ -1740,6 +1734,12 @@ extern "C"
 		uint64_t addr;
 		BNFunctionGraphType type;
 		size_t exprId;
+	};
+
+	struct BNVariableReferenceSource
+	{
+		BNVariable var;
+		BNILReferenceSource source;
 	};
 
 	struct BNTypeField

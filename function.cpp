@@ -2028,6 +2028,8 @@ vector<VariableReferenceSource> Function::GetMediumLevelILVariableReferencesFrom
 		src.source.func = new Function(BNNewFunctionReference(refs[i].source.func));
 		src.source.arch = new CoreArchitecture(refs[i].source.arch);
 		src.source.addr = refs[i].source.addr;
+		src.source.type = refs[i].source.type;
+		src.source.exprId = refs[i].source.exprId;
 
 		result.push_back(src);
 	}
@@ -2054,6 +2056,8 @@ vector<VariableReferenceSource> Function::GetMediumLevelILVariableReferencesInRa
 		src.source.func = new Function(BNNewFunctionReference(refs[i].source.func));
 		src.source.arch = new CoreArchitecture(refs[i].source.arch);
 		src.source.addr = refs[i].source.addr;
+		src.source.type = refs[i].source.type;
+		src.source.exprId = refs[i].source.exprId;
 
 		result.push_back(src);
 	}
@@ -2109,6 +2113,8 @@ vector<VariableReferenceSource> Function::GetHighLevelILVariableReferencesFrom(A
 		src.source.func = new Function(BNNewFunctionReference(refs[i].source.func));
 		src.source.arch = new CoreArchitecture(refs[i].source.arch);
 		src.source.addr = refs[i].source.addr;
+		src.source.type = refs[i].source.type;
+		src.source.exprId = refs[i].source.exprId;
 
 		result.push_back(src);
 	}
@@ -2135,6 +2141,8 @@ vector<VariableReferenceSource> Function::GetHighLevelILVariableReferencesInRang
 		src.source.func = new Function(BNNewFunctionReference(refs[i].source.func));
 		src.source.arch = new CoreArchitecture(refs[i].source.arch);
 		src.source.addr = refs[i].source.addr;
+		src.source.type = refs[i].source.type;
+		src.source.exprId = refs[i].source.exprId;
 
 		result.push_back(src);
 	}
