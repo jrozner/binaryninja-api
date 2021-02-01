@@ -14,16 +14,6 @@
 #include "viewtype.h"
 #include "action.h"
 
-enum XrefILSource
-{
-	UnspecifiedILSource,
-	DisassemblySource,
-	LowLevelILSource,
-	MediumLevelILSource,
-	HighLevelIlSource,
-	NotFromILSource
-};
-
 // this struct is used to pass selection information for cross references
 struct SelectionInfoForXref
 {
@@ -32,7 +22,7 @@ struct SelectionInfoForXref
 	// At any given time, at most one of these four should be true.
 	bool addrValid, typeValid, typeFieldValid, localVarValid;
 
-	XrefILSource ilSource;
+	BNFunctionGraphType ilSource;
 
 	uint64_t start;
 	uint64_t end;
@@ -48,15 +38,15 @@ struct SelectionInfoForXref
 
 	bool operator== (const SelectionInfoForXref& other) const 
 	{
-		// TODO: take func and arch into consideration
 		if (addrValid && other.addrValid)
-			return (start == other.start) && (end == other.end);
+			return (start == other.start) && (end == other.end) &&
+				(func == other.func) && (arch == other.arch);
 		else if (typeValid && other.typeValid)
 			return type == other.type;
 		else if (typeFieldValid && other.typeFieldValid)
 			return (type == other.type) && (offset == other.offset);
 		else if (localVarValid && other.localVarValid)
-			return var == other.var;
+			return (var == other.var) && (ilSource == other.ilSource);
 		return false;
 	}
 
