@@ -1054,6 +1054,226 @@ class ParameterVariables(object):
 		self._confidence = value
 
 
+class ILReferenceSource(object):
+	def __init__(self, func, arch, addr, il_type, expr_id):
+		self._function = func
+		self._arch = arch
+		self._address = addr
+		self._il_type = il_type
+		self._expr_id = expr_id
+	
+	def get_il_name(self, il_type):
+		if il_type == FunctionGraphType.NormalFunctionGraph:
+			return 'disasmbly'
+		if il_type == FunctionGraphType.LowLevelILFunctionGraph:
+			return 'llil'
+		if il_type == FunctionGraphType.LiftedILFunctionGraph:
+			return 'lifted_llil'
+		if il_type == FunctionGraphType.LowLevelILSSAFormFunctionGraph:
+			return 'llil_ssa'
+		if il_type == FunctionGraphType.MediumLevelILFunctionGraph:
+			return 'mlil'
+		if il_type == FunctionGraphType.MediumLevelILSSAFormFunctionGraph:
+			return 'mlil_ssa'
+		if il_type == FunctionGraphType.MappedMediumLevelILFunctionGraph:
+			return 'mapped_mlil'
+		if il_type == FunctionGraphType.MappedMediumLevelILSSAFormFunctionGraph:
+			return 'mapped_mlil_ssa'
+		if il_type == FunctionGraphType.HighLevelILFunctionGraph:
+			return 'hlil'
+		if il_type == FunctionGraphType.HighLevelILSSAFormFunctionGraph:
+			return 'hlil_ssa'
+		
+	def __repr__(self):
+		if self._arch:
+			return "<ref: %s@%#x, %s@%d>" %\
+				(self._arch.name, self._address, self.get_il_name(self._il_type), self.expr_id)
+		else:
+			return "<ref: %#x, %s@%d>" %\
+				(self._address, self.get_il_name(self._il_type), self.expr_id)
+
+	def __eq__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		return (self.function, self.arch, self.address, self.il_type, self.expr_id) ==\
+			(other.address, other.function, other.arch, other.il_type, other.expr_id)
+	
+	def __ne__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		return not (self == other)
+
+	def __lt__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		if self.function < other.function:
+			return True
+		if self.function > other.function:
+			return False
+		if self.arch < other.arch:
+			return True
+		if self.arch > other.arch:
+			return False
+		if self.address < other.address:
+			return True
+		if self.address > other.address:
+			return False
+		if self.il_type < other.il_type:
+			return True
+		if self.il_type > other.il_type:
+			return False
+		return self.expr_id < other.expr_id
+	
+	def __gt__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		if self.function > other.function:
+			return True
+		if self.function < other.function:
+			return False
+		if self.arch > other.arch:
+			return True
+		if self.arch < other.arch:
+			return False
+		if self.address > other.address:
+			return True
+		if self.address < other.address:
+			return False
+		if self.il_type > other.il_type:
+			return True
+		if self.il_type < other.il_type:
+			return False
+		return self.expr_id > other.expr_id
+
+	def __ge__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		return (self == other) or (self > other)
+
+	def __le__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		return (self == other) or (self < other)
+
+	def __hash__(self):
+		return hash((self._function, self._arch, self._address, self._il_type, self._expr_id))
+
+	@property
+	def function(self):
+		""" """
+		return self._function
+
+	@function.setter
+	def function(self, value):
+		self._function = value
+
+	@property
+	def arch(self):
+		""" """
+		return self._arch
+
+	@arch.setter
+	def arch(self, value):
+		self._arch = value
+
+	@property
+	def address(self):
+		""" """
+		return self._address
+
+	@address.setter
+	def address(self, value):
+		self._address = value
+
+	@property
+	def il_type(self):
+		""" """
+		return self._il_type
+
+	@il_type.setter
+	def il_type(self, value):
+		self._il_type = value
+
+	@property
+	def expr_id(self):
+		""" """
+		return self._expr_id
+
+	@expr_id.setter
+	def expr_id(self, value):
+		self._expr_id = value
+
+	
+class VariableReferenceSource(object):
+	def __init__(self, var, src):
+		self._var = var
+		self._src = src
+
+	def __repr__(self):
+		return "<var: %s, src: %s>" % (repr(self._var), repr(self._src))
+
+	def __eq__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		return (self.var == other.var) and (self.src == other.src)
+
+	def __ne__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		return not (self == other)
+	
+	def __lt__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		if self.var < other.var:
+			return True
+		if self.var > other.var:
+			return False
+		return self.src < other.src
+
+	def __gt__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		if self.var > other.var:
+			return True
+		if self.var < other.var:
+			return False
+		return self.src > other.src
+
+	def __ge__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		if self.var >= other.var:
+			return True
+		if self.var < other.var:
+			return False
+		return self.src >= other.src
+
+	def __le__(self, other):
+		if not isinstance(other, self.__class__):
+			return NotImplemented
+		if self.var <= other.var:
+			return True
+		if self.var > other.var:
+			return False
+		return self.src <= other.src
+
+	@property
+	def var(self):
+		return self._var
+	@var.setter
+	def var(self, value):
+		self._var = value
+
+	@property
+	def src(self):
+		return self._src
+
+	@src.setter
+	def src(self, value):
+		self._src = value
+
+
 class _FunctionAssociatedDataStore(associateddatastore._AssociatedDataStore):
 	_defaults = {}
 
@@ -3050,22 +3270,22 @@ class Function(object):
 				functions.append(ref.function)
 		return functions
 
-	def get_mlil_variable_references(self, var):
+	def get_mlil_var_refs(self, var):
 		"""
-		``get_mlil_variable_references`` returns a list of ReferenceSource objects (xrefs or cross-references)
+		``get_mlil_var_refs`` returns a list of ILReferenceSource objects (IL xrefs or cross-references)
 		that reference the given variable. The variable is a local variable that can be either on the stack,
 		in a register, or in a flag.
-		This function is related to get_hlil_variable_references(), which returns variable references collected
+		This function is related to get_hlil_var_refs(), which returns variable references collected
 		from HLIL. The two can be different in several cases, e.g., multiple variables in MLIL can be merged
 		into a single variable in HLIL.
 		
 		:param Variable var: Variable for which to query the xref
-		:return: List of References for the given variable
-		:rtype: list(ReferenceSource)
+		:return: List of IL References for the given variable
+		:rtype: list(ILReferenceSource)
 		:Example:
 
 			>>> var = current_mlil[0].operands[0]
-			>>> current_function.get_mlil_variable_references(var)
+			>>> current_function.get_mlil_var_refs(var)
 		"""
 		count = ctypes.c_ulonglong(0)
 		var_data = core.BNVariable()
@@ -3083,26 +3303,27 @@ class Function(object):
 				arch = binaryninja.architecture.CoreArchitecture._from_cache(refs[i].arch)
 			else:
 				arch = None
-			addr = refs[i].addr
-			result.append(binaryninja.architecture.ReferenceSource(func, arch, addr))
-		core.BNFreeCodeReferences(refs, count.value)
+
+			result.append(binaryninja.ILReferenceSource(
+				func, arch, refs[i].addr, refs[i].type, refs[i].exprId))
+		core.BNFreeILReferences(refs, count.value)
 		return result
 	
-	def get_mlil_variable_references_from(self, addr, length = None, arch = None):
+	def get_mlil_var_refs_from(self, addr, length = None, arch = None):
 		"""
-		``get_mlil_variable_references`` returns a list of variables referenced by code in the function ``func``,
+		``get_mlil_var_refs_from`` returns a list of variables referenced by code in the function ``func``,
 		of the architecture ``arch``, and at the address ``addr``. If no function is specified, references from
 		all functions and containing the address will be returned. If no architecture is specified, the
 		architecture of the function will be used.
-		This function is related to get_hlil_variable_references_from(), which returns variable references collected
+		This function is related to get_hlil_var_refs_from(), which returns variable references collected
 		from HLIL. The two can be different in several cases, e.g., multiple variables in MLIL can be merged
 		into a single variable in HLIL.
 
 		:param int addr: virtual address to query for variable references
 		:param int length: optional length of query
 		:param Architecture arch: optional architecture of query
-		:return: list of variables
-		:rtype: list(Variable)
+		:return: list of variable reference sources
+		:rtype: list(VariableReferenceSource)
 		"""
 		result = []
 		count = ctypes.c_ulonglong(0)
@@ -3111,23 +3332,34 @@ class Function(object):
 		else:
 			refs = core.BNGetMediumLevelILVariableReferencesInRange(self.handle, self.arch.handle, addr, length, count)
 		for i in range(0, count.value):
-			result.append(Variable(self, refs[i].type, refs[i].index, refs[i].storage))
-		core.BNFreeVariableList(refs)
+			var = Variable(self, refs[i].var.type, refs[i].var.index, refs[i].var.storage)
+			if refs[i].source.func:
+				func = binaryninja.function.Function(self, core.BNNewFunctionReference(refs[i].source.func))
+			else:
+				func = None
+			if refs[i].source.arch:
+				arch = binaryninja.architecture.CoreArchitecture._from_cache(refs[i].source.arch)
+			else:
+				arch = None
+
+			src = ILReferenceSource(func, arch, refs[i].source.addr, refs[i].source.type, refs[i].source.exprId)
+			result.append(VariableReferenceSource(var, src))
+		core.BNFreeVariableReferenceSourceList(refs, count.value)
 		return result
 
-	def get_hlil_variable_references(self, var):
+	def get_hlil_var_refs(self, var):
 		"""
-		``get_hlil_variable_references`` returns a list of ReferenceSource objects (xrefs or cross-references)
+		``get_hlil_var_refs`` returns a list of ILReferenceSource objects (IL xrefs or cross-references)
 		that reference the given variable. The variable is a local variable that can be either on the stack,
 		in a register, or in a flag.
 		
 		:param Variable var: Variable for which to query the xref
-		:return: List of References for the given variable
-		:rtype: list(ReferenceSource)
+		:return: List of IL References for the given variable
+		:rtype: list(ILReferenceSource)
 		:Example:
 
 			>>> var = current_hlil[0].operands[0]
-			>>> current_function.get_hlil_variable_references(var)
+			>>> current_function.get_hlil_var_refs(var)
 		"""
 		count = ctypes.c_ulonglong(0)
 		var_data = core.BNVariable()
@@ -3145,14 +3377,14 @@ class Function(object):
 				arch = binaryninja.architecture.CoreArchitecture._from_cache(refs[i].arch)
 			else:
 				arch = None
-			addr = refs[i].addr
-			result.append(binaryninja.architecture.ReferenceSource(func, arch, addr))
-		core.BNFreeCodeReferences(refs, count.value)
+			result.append(binaryninja.ILReferenceSource(
+				func, arch, refs[i].addr, refs[i].type, refs[i].exprId))
+		core.BNFreeILReferences(refs, count.value)
 		return result
 	
-	def get_hlil_variable_references_from(self, addr, length = None, arch = None):
+	def get_hlil_var_refs_from(self, addr, length = None, arch = None):
 		"""
-		``get_hlil_variable_references_from`` returns a list of variables referenced by code in the function ``func``,
+		``get_hlil_var_refs_from`` returns a list of variables referenced by code in the function ``func``,
 		of the architecture ``arch``, and at the address ``addr``. If no function is specified, references from
 		all functions and containing the address will be returned. If no architecture is specified, the
 		architecture of the function will be used.
@@ -3160,8 +3392,8 @@ class Function(object):
 		:param int addr: virtual address to query for variable references
 		:param int length: optional length of query
 		:param Architecture arch: optional architecture of query
-		:return: list of variables
-		:rtype: list(Variable)
+		:return: list of variables reference sources
+		:rtype: list(VariableReferenceSource)
 		"""
 		result = []
 		count = ctypes.c_ulonglong(0)
@@ -3170,8 +3402,19 @@ class Function(object):
 		else:
 			refs = core.BNGetHighLevelILVariableReferencesInRange(self.handle, self.arch.handle, addr, length, count)
 		for i in range(0, count.value):
-			result.append(Variable(self, refs[i].type, refs[i].index, refs[i].storage))
-		core.BNFreeVariableList(refs)
+			var = Variable(self, refs[i].var.type, refs[i].var.index, refs[i].var.storage)
+			if refs[i].source.func:
+				func = binaryninja.function.Function(self, core.BNNewFunctionReference(refs[i].source.func))
+			else:
+				func = None
+			if refs[i].source.arch:
+				arch = binaryninja.architecture.CoreArchitecture._from_cache(refs[i].source.arch)
+			else:
+				arch = None
+
+			src = ILReferenceSource(func, arch, refs[i].source.addr, refs[i].source.type, refs[i].source.exprId)
+			result.append(VariableReferenceSource(var, src))
+		core.BNFreeVariableReferenceSourceList(refs, count.value)
 		return result
 
 
