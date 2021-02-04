@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO : Translate this whole file into C++. and make an API for it
-
 use binaryninjacore_sys::*;
 
 // TODO : Documentation
