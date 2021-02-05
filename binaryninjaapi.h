@@ -3240,6 +3240,9 @@ __attribute__ ((format (printf, 1, 2)))
 
 		BNDeadStoreElimination GetVariableDeadStoreElimination(const Variable& var);
 		void SetVariableDeadStoreElimination(const Variable& var, BNDeadStoreElimination mode);
+
+		uint64_t GetHighestAddress();
+		uint64_t GetLowestAddress();
 	};
 
 	class AdvancedFunctionAnalysisDataRequestor

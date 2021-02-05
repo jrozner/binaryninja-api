@@ -1954,6 +1954,18 @@ void Function::SetVariableDeadStoreElimination(const Variable& var, BNDeadStoreE
 }
 
 
+uint64_t Function::GetHighestAddress()
+{
+	return BNGetFunctionHighestAddress(m_object);
+}
+
+
+uint64_t Function::GetLowestAddress()
+{
+	return BNGetFunctionLowestAddress(m_object);
+}
+
+
 AdvancedFunctionAnalysisDataRequestor::AdvancedFunctionAnalysisDataRequestor(Function* func): m_func(func)
 {
 	if (m_func)
