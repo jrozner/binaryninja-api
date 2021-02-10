@@ -30,22 +30,23 @@ pub type NamedTypeReferenceClass = BNNamedTypeReferenceClass;
 #[derive(PartialEq, Eq, Hash)]
 pub struct Type {
     pub(crate) handle: *mut BNType,
-    pub(crate) confidence: u8,
 }
 
 impl Type {
     pub(crate) unsafe fn from_raw(handle: *mut BNType) -> Self {
         debug_assert!(!handle.is_null());
 
-        Self {
-            handle,
-            // TODO : Remove this field and and make Confidence<Type>
-            confidence: 255,
-        }
+        Self { handle }
+    }
+
+    pub(crate) unsafe fn ref_from_raw(handle: *mut BNType) -> Ref<Self> {
+        debug_assert!(!handle.is_null());
+
+        Ref::new(Self { handle })
     }
 
     // TODO : Implement type builders (how I did with structures)
-    // pub(crate) unsafe fn from_builder(handle: *mut BNTypeBuilder) -> Self {
+    // pub(crate) unsafe fn from_builder(handle: *mut BNTypeBuilder) -> Ref<Self> {
     //     debug_assert!(!handle.is_null());
 
     //     Self { handle }
@@ -59,22 +60,22 @@ impl Type {
     //   bv.define_user_type("int_1", &my_custom_type_1);
     //   bv.define_user_type("int_2", &my_custom_type_2);
 
-    pub fn void() -> Self {
-        unsafe { Type::from_raw(BNCreateVoidType()) }
+    pub fn void() -> Ref<Self> {
+        unsafe { Type::ref_from_raw(BNCreateVoidType()) }
     }
 
-    pub fn bool() -> Self {
-        unsafe { Type::from_raw(BNCreateBoolType()) }
+    pub fn bool() -> Ref<Self> {
+        unsafe { Type::ref_from_raw(BNCreateBoolType()) }
     }
 
-    pub fn char() -> Self {
+    pub fn char() -> Ref<Self> {
         Type::int(1, true)
     }
 
-    pub fn int(width: usize, is_signed: bool) -> Self {
+    pub fn int(width: usize, is_signed: bool) -> Ref<Self> {
         let mut is_signed = BoolWithConfidence::new(is_signed, 0);
         unsafe {
-            Type::from_raw(BNCreateIntegerType(
+            Type::ref_from_raw(BNCreateIntegerType(
                 width,
                 &mut is_signed.0,
                 BnString::new("").as_ptr() as *mut _,
@@ -82,13 +83,13 @@ impl Type {
         }
     }
 
-    pub fn named_int<S: BnStrCompatible>(width: usize, is_signed: bool, alt_name: S) -> Self {
+    pub fn named_int<S: BnStrCompatible>(width: usize, is_signed: bool, alt_name: S) -> Ref<Self> {
         let mut is_signed = BoolWithConfidence::new(is_signed, 0);
         // let alt_name = BnString::new(alt_name);
         let alt_name = alt_name.as_bytes_with_nul(); // This segfaulted once, so the above version is there if we need to change to it, but in theory this is copied into a `const string&` on the C++ side; I'm just not 100% confident that a constant reference copies data
 
         unsafe {
-            Type::from_raw(BNCreateIntegerType(
+            Type::ref_from_raw(BNCreateIntegerType(
                 width,
                 &mut is_signed.0,
                 alt_name.as_ref().as_ptr() as _,
@@ -96,29 +97,28 @@ impl Type {
         }
     }
 
-    pub fn float(width: usize) -> Self {
+    pub fn float(width: usize) -> Ref<Self> {
         unsafe {
-            Type::from_raw(BNCreateFloatType(
+            Type::ref_from_raw(BNCreateFloatType(
                 width,
                 BnString::new("").as_ptr() as *mut _,
             ))
         }
     }
 
-    pub fn named_float<S: BnStrCompatible>(width: usize, alt_name: S) -> Self {
+    pub fn named_float<S: BnStrCompatible>(width: usize, alt_name: S) -> Ref<Self> {
         // let alt_name = BnString::new(alt_name);
         let alt_name = alt_name.as_bytes_with_nul(); // See same line in `named_int` above
 
-        unsafe { Type::from_raw(BNCreateFloatType(width, alt_name.as_ref().as_ptr() as _)) }
+        unsafe { Type::ref_from_raw(BNCreateFloatType(width, alt_name.as_ref().as_ptr() as _)) }
     }
 
-    pub fn array(t: &Type, count: u64) -> Self {
-        let mut type_conf = TypeWithConfidence::new(&t, t.confidence);
-        unsafe { Type::from_raw(BNCreateArrayType(&mut type_conf.0, count)) }
+    pub fn array(t: &TypeWithConfidence, count: u64) -> Ref<Self> {
+        unsafe { Type::ref_from_raw(BNCreateArrayType(&t.0, count)) }
     }
 
-    pub fn structure_type(structure_type: &mut Structure) -> Self {
-        unsafe { Type::from_raw(BNCreateStructureType(structure_type.handle())) }
+    pub fn structure_type(structure_type: &mut Structure) -> Ref<Self> {
+        unsafe { Type::ref_from_raw(BNCreateStructureType(structure_type.handle())) }
     }
 
     // TODO : Create enumeration type and finish implementing this
@@ -127,13 +127,13 @@ impl Type {
     //     enum_type: Enumeration,
     //     width: usize,
     //     is_signed: bool,
-    // ) -> Self {
-    //     unsafe { Type::from_raw(BNCreateEnumerationType(arch, enum_type, width, is_signed)) }
+    // ) -> Ref<Self> {
+    //     unsafe { Type::ref_from_raw(BNCreateEnumerationType(arch, enum_type, width, is_signed)) }
     // }
 
-    pub fn named_type(type_reference: NamedTypeReference) -> Self {
+    pub fn named_type(type_reference: NamedTypeReference) -> Ref<Self> {
         unsafe {
-            Type::from_raw(BNFinalizeTypeBuilder(BNCreateNamedTypeReferenceBuilder(
+            Type::ref_from_raw(BNFinalizeTypeBuilder(BNCreateNamedTypeReferenceBuilder(
                 type_reference.handle,
                 0,
                 1,
@@ -141,11 +141,11 @@ impl Type {
         }
     }
 
-    pub fn named_type_from_type<S: BnStrCompatible>(name: S, t: &Type) -> Self {
+    pub fn named_type_from_type<S: BnStrCompatible>(name: S, t: &Type) -> Ref<Self> {
         let mut name = QualifiedName::from(name);
 
         unsafe {
-            Type::from_raw(BNFinalizeTypeBuilder(
+            Type::ref_from_raw(BNFinalizeTypeBuilder(
                 BNCreateNamedTypeReferenceBuilderFromTypeAndId(
                     BnString::new("").as_ptr() as *mut _,
                     &mut name.0, // BNCreateNamedTypeReferenceBuilderFromTypeAndId copy's qualified the name
@@ -157,14 +157,13 @@ impl Type {
 
     // TODO : BNCreateFunctionType
 
-    pub fn pointer<A: Architecture>(arch: &A, t: &Type) -> Self {
+    pub fn pointer<A: Architecture>(arch: &A, t: &TypeWithConfidence) -> Ref<Self> {
         let mut is_const = BoolWithConfidence::new(false, 0);
         let mut is_volatile = BoolWithConfidence::new(false, 0);
-        let mut type_conf = TypeWithConfidence::new(&t, t.confidence);
         unsafe {
-            Type::from_raw(BNCreatePointerType(
+            Type::ref_from_raw(BNCreatePointerType(
                 arch.as_ref().0,
-                &mut type_conf.0,
+                &t.0,
                 &mut is_const.0,
                 &mut is_volatile.0,
                 ReferenceType::PointerReferenceType,
@@ -172,14 +171,13 @@ impl Type {
         }
     }
 
-    pub fn const_pointer<A: Architecture>(arch: &A, t: &Type) -> Self {
-        let mut is_const = BoolWithConfidence::new(true, 0);
+    pub fn const_pointer<A: Architecture>(arch: &A, t: &TypeWithConfidence) -> Ref<Self> {
+        let mut is_const = BoolWithConfidence::new(true, 255);
         let mut is_volatile = BoolWithConfidence::new(false, 0);
-        let mut type_conf = TypeWithConfidence::new(&t, t.confidence);
         unsafe {
-            Type::from_raw(BNCreatePointerType(
+            Type::ref_from_raw(BNCreatePointerType(
                 arch.as_ref().0,
-                &mut type_conf.0,
+                &t.0,
                 &mut is_const.0,
                 &mut is_volatile.0,
                 ReferenceType::PointerReferenceType,
@@ -189,18 +187,17 @@ impl Type {
 
     pub fn pointer_with_options<A: Architecture>(
         arch: &A,
-        t: &Type,
+        t: &TypeWithConfidence,
         is_const: bool,
         is_volatile: bool,
         ref_type: Option<ReferenceType>,
-    ) -> Self {
-        let mut is_const = BoolWithConfidence::new(is_const, 0);
-        let mut is_volatile = BoolWithConfidence::new(is_volatile, 0);
-        let mut type_conf = TypeWithConfidence::new(&t, t.confidence);
+    ) -> Ref<Self> {
+        let mut is_const = BoolWithConfidence::new(is_const, 255);
+        let mut is_volatile = BoolWithConfidence::new(is_volatile, 255);
         unsafe {
-            Type::from_raw(BNCreatePointerType(
+            Type::ref_from_raw(BNCreatePointerType(
                 arch.as_ref().0,
-                &mut type_conf.0,
+                &t.0,
                 &mut is_const.0,
                 &mut is_volatile.0,
                 ref_type.unwrap_or_else(|| ReferenceType::PointerReferenceType),
@@ -229,7 +226,6 @@ unsafe impl RefCountable for Type {
     unsafe fn inc_ref(handle: &Self) -> Ref<Self> {
         Ref::new(Self {
             handle: BNNewTypeReference(handle.handle),
-            confidence: handle.confidence,
         })
     }
 
@@ -317,27 +313,21 @@ impl Structure {
         }
     }
 
-    pub fn append<S: BnStrCompatible>(&self, t: &Type, name: S) {
+    pub fn append<S: BnStrCompatible>(&self, t: &TypeWithConfidence, name: S) {
         assert!(self.handle.is_none());
-        let mut type_conf = TypeWithConfidence::new(t, t.confidence);
         let name = name.as_bytes_with_nul();
         unsafe {
-            BNAddStructureBuilderMember(
-                self.builder,
-                &mut type_conf.0,
-                name.as_ref().as_ptr() as _,
-            );
+            BNAddStructureBuilderMember(self.builder, &t.0, name.as_ref().as_ptr() as _);
         }
     }
 
-    pub fn insert<S: BnStrCompatible>(&self, t: &Type, name: S, offset: u64) {
+    pub fn insert<S: BnStrCompatible>(&self, t: &TypeWithConfidence, name: S, offset: u64) {
         assert!(self.handle.is_none());
-        let mut type_conf = TypeWithConfidence::new(t, t.confidence);
         let name = name.as_bytes_with_nul();
         unsafe {
             BNAddStructureBuilderMemberAtOffset(
                 self.builder,
-                &mut type_conf.0,
+                &t.0,
                 name.as_ref().as_ptr() as _,
                 offset,
             );
@@ -379,6 +369,12 @@ impl TypeWithConfidence {
             type_: t.handle,
             confidence,
         })
+    }
+}
+
+impl From<&Type> for TypeWithConfidence {
+    fn from(t: &Type) -> Self {
+        TypeWithConfidence::new(t, 255)
     }
 }
 
