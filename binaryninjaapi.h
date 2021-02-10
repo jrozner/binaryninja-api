@@ -5079,6 +5079,7 @@ __attribute__ ((format (printf, 1, 2)))
 		std::vector<std::string> GetApis() const;
 		std::vector<std::string> GetInstallPlatforms() const;
 		std::string GetPath() const;
+		std::string GetDependencies() const;
 		std::string GetPluginDirectory() const;
 		std::string GetAuthor() const;
 		std::string GetDescription() const;
@@ -5109,6 +5110,7 @@ __attribute__ ((format (printf, 1, 2)))
 
 		bool Uninstall();
 		bool Install();
+		bool InstallDependencies();
 		// `force` ignores optional checks for platform/api compliance
 		bool Enable(bool force);
 		bool Disable();

@@ -211,6 +211,7 @@ extern "C"
 	struct BNLinearViewCursor;
 
 	typedef bool (*BNLoadPluginCallback)(const char* repoPath, const char* pluginPath, bool force, void* ctx);
+	typedef bool (*BNInstallDependencyCallback)(const char* dependency, void* ctx);
 
 	//! Console log levels
 	enum BNLogLevel
@@ -4714,6 +4715,7 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI BNRepoPlugin* BNNewPluginReference(BNRepoPlugin* r);
 	BINARYNINJACOREAPI void BNFreePlugin(BNRepoPlugin* plugin);
 	BINARYNINJACOREAPI const char* BNPluginGetPath(BNRepoPlugin* p);
+	BINARYNINJACOREAPI const char* BNPluginGetDependencies(BNRepoPlugin* p);
 	BINARYNINJACOREAPI bool BNPluginIsInstalled(BNRepoPlugin* p);
 	BINARYNINJACOREAPI bool BNPluginIsEnabled(BNRepoPlugin* p);
 	BINARYNINJACOREAPI BNPluginStatus BNPluginGetPluginStatus(BNRepoPlugin* p);
@@ -4721,6 +4723,7 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI bool BNPluginEnable(BNRepoPlugin* p, bool force);
 	BINARYNINJACOREAPI bool BNPluginDisable(BNRepoPlugin* p);
 	BINARYNINJACOREAPI bool BNPluginInstall(BNRepoPlugin* p);
+	BINARYNINJACOREAPI bool BNPluginInstallDependencies(BNRepoPlugin* p);
 	BINARYNINJACOREAPI bool BNPluginUninstall(BNRepoPlugin* p);
 	BINARYNINJACOREAPI bool BNPluginUpdate(BNRepoPlugin* p);
 	BINARYNINJACOREAPI char* BNPluginGetInstallInstructions(BNRepoPlugin* p, const char* platform);
@@ -4763,9 +4766,11 @@ __attribute__ ((format (printf, 1, 2)))
 	BINARYNINJACOREAPI BNRepository* BNRepositoryManagerGetDefaultRepository(BNRepositoryManager* r);
 	BINARYNINJACOREAPI void BNRegisterForPluginLoading(
 		const char* pluginApiName,
-		bool (*cb)(const char* repoPath, const char* pluginPath, bool force, void* ctx), // BNLoadPluginCallback
+		bool (*load_plugin_cb)(const char* repoPath, const char* pluginPath, bool force, void* ctx), // BNLoadPluginCallback
+		bool (*install_dependency_cb)(const char* dependency, void* ctx), // BNInstallDependencyCallback
 		void* ctx);
 	BINARYNINJACOREAPI bool BNLoadPluginForApi(const char* pluginApiName, const char* repoPath, const char* pluginPath, bool force);
+	BINARYNINJACOREAPI bool BNInstallDependencyForApi(const char* pluginApiName, const char* dependency);
 	BINARYNINJACOREAPI char** BNGetRegisteredPluginLoaders(size_t* count);
 	BINARYNINJACOREAPI void BNFreeRegisteredPluginLoadersList(char** pluginLoaders, size_t count);
 

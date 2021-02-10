@@ -25,7 +25,9 @@ import sys
 import ctypes
 from time import gmtime
 import os
-
+from pathlib import Path
+import subprocess
+import pkg_resources
 
 from binaryninja.compatibility import *
 
@@ -90,18 +92,41 @@ def get_install_directory():
 	return core.BNGetInstallDirectory()
 
 
-_plugin_api_name = "python{}".format(sys.version_info.major)
-
-
 class PluginManagerLoadPluginCallback(object):
-	"""Callback for BNLoadPluginForApi("python{version}", ...), dynamically loads python plugins."""
+	"""Callbacks for PluginManager plugin installation and dependency installation."""
 	def __init__(self):
-		self.cb = ctypes.CFUNCTYPE(
-			ctypes.c_bool,
-			ctypes.c_char_p,
-			ctypes.c_char_p,
-			ctypes.c_bool,
-			ctypes.c_void_p)(self._load_plugin)
+		self._plugin_api_name = f"python{sys.version_info.major}"
+		self._load_plugin_cb = ctypes.CFUNCTYPE(ctypes.c_bool, ctypes.c_char_p, ctypes.c_char_p,
+			ctypes.c_bool,ctypes.c_void_p)(self._load_plugin)
+		self._install_dependency_cb = ctypes.CFUNCTYPE(ctypes.c_bool, ctypes.c_char_p,
+			ctypes.c_void_p)(self._install_dependency)
+		core.BNRegisterForPluginLoading(self._plugin_api_name, self._load_plugin_cb, self._install_dependency_cb, 0)
+
+	def _install_dependency(self, dependencies, ctx):
+		settings = Settings()
+		virtualEnv = settings.get_string("python.virtualenv")
+		if virtualEnv == '':
+			log.log_error("Unable to install dependencies without virtual environment configured")
+			return
+
+		path = Path(virtualEnv) / "bin" / "python"
+		if not path.is_file():
+			log.log_error(f"Virtual environment not configured properly path {path} is not a file")
+			return
+
+		result = True
+		for dependency in dependencies.decode('utf-8').split("\n"):
+			if len(dependency) == 0:
+				continue
+
+			#TODO: Attempt to parse requirements string and notify on bad format
+			try:
+				subprocess.check_call([str(path), "-m", "pip", "install", dependency])
+				log.log_info(f"Installed dependency: {dependency}")
+			except Exception as e:
+				log.log_warn(f"Failed to install dependency {dependency} {e}")
+				result = False
+		return result
 
 	def _load_plugin(self, repo_path, plugin_path, force, ctx):
 		try:
@@ -110,8 +135,8 @@ class PluginManagerLoadPluginCallback(object):
 			repo = RepositoryManager()[repo_path]
 			plugin = repo[plugin_path]
 
-			if not force and _plugin_api_name not in plugin.api:
-				raise ValueError("Plugin API name is not " + _plugin_api_name)
+			if not force and self._plugin_api_name not in plugin.api:
+				raise ValueError("Plugin API name is not " + self._plugin_api_name)
 
 			if not force and core.core_platform not in plugin.install_platforms:
 				raise ValueError("Current platform {} isn't in list of valid platforms for this plugin {}".format(
@@ -134,8 +159,7 @@ class PluginManagerLoadPluginCallback(object):
 		return False
 
 
-load_plugin = PluginManagerLoadPluginCallback()
-core.BNRegisterForPluginLoading(_plugin_api_name, load_plugin.cb, 0)
+_plugin_loader = PluginManagerLoadPluginCallback()
 
 
 class _DestructionCallbackHandler(object):
