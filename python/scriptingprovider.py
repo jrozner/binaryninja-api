@@ -26,7 +26,8 @@ import threading
 import abc
 import sys
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePath
+import re
 
 # Binary Ninja components
 import binaryninja
@@ -797,6 +798,46 @@ class PythonScriptingInstance(ScriptingInstance):
 			return ""
 		return result
 
+
+def python_binary_for_library(lib_path: str) -> str:
+	import platform
+	core_platform = platform.system()
+	if core_platform == "Darwin":
+		if (lib_path.startswith("/usr/local/Cellar/python") or
+			lib_path.startsWith("/usr/local/Frameworks/Python.framework") or
+			lib_path.startsWith("/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions")):
+			path = Path(lib_path).parent / "bin"
+			if not path.is_dir():
+				return None
+			bin_regex = ("^python((@)?\\d*(.\\d+)*)?$")
+			for entry in path.glob("python*"):
+				if re.search(bin_regex, entry.name):
+					return str(entry)
+		# TODO: Bundled python
+	elif core_platform == "Linux":
+		lib_regex = "^libpython(\\d+(.\\d+)*)+(m)?\\.so(.\\d+(.\\d+)*)?$"
+		path = Path(lib_path)
+		result = re.search(lib_regex, path.name)
+		if result is None:
+			return None
+		python_bin = "python" + result.group(1)
+		if lib_path.startswith("/usr/lib/x86_64-linux-gnu"):
+			path /= ".." / ".." / "bin" / python_bin
+		elif lib_path.startswith("/usr/local/lib") or lib_path.startswith("/usr/lib"):
+			path /= ".." / "bin" / python_bin
+		else:
+			return None
+
+		return str(path)
+
+	elif (core_platform == "Windows") or (core_platform.find("CYGWIN_NT") == 0):
+		bin_regex = "^python((@)?\\d*(.\\d+)*)?.exe$"
+		path = Path(lib_path)
+		for entry in path.glob("*.exe"):
+			if entry.is_file() and re.search(bin_regex, entry.name):
+					return str(entry)
+	return None
+
 class PythonScriptingProvider(ScriptingProvider):
 	name = "Python"
 	apiName = f"python{sys.version_info.major}" # Used for plugin compatibility testing
@@ -832,20 +873,31 @@ class PythonScriptingProvider(ScriptingProvider):
 			log.log_error(f"Failed to import python plugin: {repo_path}/{module}: {ie}")
 		return False
 
-	def _install_module(self, ctx, module):
+	def _install_modules(self, ctx, module):
 		settings = Settings()
 		virtualEnv = settings.get_string("python.virtualenv")
-		if virtualEnv == '':
-			log.log_error("Unable to install module without virtual environment configured")
-			return False
-
-		path = Path(virtualEnv) / "bin" / "python"
-		if not path.is_file():
-			log.log_error(f"Virtual environment not configured properly path {path} is not a file")
-			return False
+		interpreter_binary = settings.get_string("python.interpreterBinary")
+		if virtualEnv != "":
+			path = Path(virtualEnv) / "bin" / "python"
+			if not path.is_file():
+				log.log_error(f"Virtual environment not configured properly path {path} is not a file")
+				return False
+		elif interpreter_binary != "":
+			path = Path(interpreter_binary)
+			if not path.is_file():
+				log.log_error(f"Python interpreter binary setting not configured properly path {path} is not a file")
+				return False
+		else:
+			interpreter_library = settings.get_string("python.interpreter")
+			bin_path = python_binary_for_library(interpreter_library)
+			if bin_path is None:
+				log.log_error(f"Failed to discover python binary for configured library {interpreter_library}."\
+					f" Please specify the corresponding python binary in the setting 'Python Interpreter Binary'")
+				return False
+			path = Path(bin_path)
 
 		result = True
-		for dependency in module.decode('utf-8').split("\n"):
+		for dependency in module.decode("utf-8").split("\n"):
 			if len(dependency) == 0:
 				continue
 
