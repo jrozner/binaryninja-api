@@ -25,17 +25,18 @@ import ctypes
 import threading
 import abc
 import sys
-from binaryninja import bncompleter
-import re
+import subprocess
+from pathlib import Path
 
 # Binary Ninja components
 import binaryninja
+from binaryninja import bncompleter, log
 from binaryninja import _binaryninjacore as core
+from binaryninja.settings import Settings
+from binaryninja.pluginmanager import RepositoryManager
 from binaryninja.enums import ScriptingProviderExecuteResult, ScriptingProviderInputReadyState
-from binaryninja import log
 
 # 2-3 compatibility
-from binaryninja import range
 from binaryninja import with_metaclass
 
 
@@ -364,7 +365,9 @@ class ScriptingProvider(with_metaclass(_ScriptingProviderMetaclass, object)):
 		self._cb = core.BNScriptingProviderCallbacks()
 		self._cb.context = 0
 		self._cb.createInstance = self._cb.createInstance.__class__(self._create_instance)
-		self.handle = core.BNRegisterScriptingProvider(self.__class__.name, self._cb)
+		self._cb.loadModule = self._cb.loadModule.__class__(self._load_module)
+		self._cb.installModules = self._cb.installModules.__class__(self._install_modules)
+		self.handle = core.BNRegisterScriptingProvider(self.__class__.name, self.__class__.apiName, self._cb)
 		self.__class__._registered_providers.append(self)
 
 	def _create_instance(self, ctxt):
@@ -383,6 +386,11 @@ class ScriptingProvider(with_metaclass(_ScriptingProviderMetaclass, object)):
 			return None
 		return ScriptingInstance(self, handle = result)
 
+	def _load_plugin(self, ctx, repo_path, plugin_path, force):
+		return False
+
+	def _install_modules(self, ctx, modules):
+		return False
 
 class _PythonScriptingInstanceOutput(object):
 	def __init__(self, orig, is_error):
@@ -791,7 +799,64 @@ class PythonScriptingInstance(ScriptingInstance):
 
 class PythonScriptingProvider(ScriptingProvider):
 	name = "Python"
+	apiName = f"python{sys.version_info.major}" # Used for plugin compatibility testing
 	instance_class = PythonScriptingInstance
+
+	def _load_module(self, ctx, repo_path, module, force):
+		try:
+			repo_path = repo_path.decode("utf-8")
+			module = module.decode("utf-8")
+			repo = RepositoryManager()[repo_path]
+			plugin = repo[module]
+
+			if not force and self.name not in plugin.api:
+				raise ValueError(f"Plugin API name is not {self.name}")
+
+			if not force and core.core_platform not in plugin.install_platforms:
+				raise ValueError(f"Current platform {core.core_platform} isn't in list of "\
+					f"valid platforms for this plugin {plugin.install_platforms}")
+			if not plugin.installed:
+				plugin.installed = True
+
+			plugin_full_path = Path(repo.full_path) / plugin.path
+			if repo.full_path not in sys.path:
+				sys.path.append(repo.full_path)
+			if plugin_full_path not in sys.path:
+				sys.path.append(plugin_full_path)
+
+			__import__(module)
+			return True
+		except KeyError:
+			log.log_error(f"Failed to find python plugin: {repo_path}/{module}")
+		except ImportError as ie:
+			log.log_error(f"Failed to import python plugin: {repo_path}/{module}: {ie}")
+		return False
+
+	def _install_module(self, ctx, module):
+		settings = Settings()
+		virtualEnv = settings.get_string("python.virtualenv")
+		if virtualEnv == '':
+			log.log_error("Unable to install module without virtual environment configured")
+			return False
+
+		path = Path(virtualEnv) / "bin" / "python"
+		if not path.is_file():
+			log.log_error(f"Virtual environment not configured properly path {path} is not a file")
+			return False
+
+		result = True
+		for dependency in module.decode('utf-8').split("\n"):
+			if len(dependency) == 0:
+				continue
+
+			#TODO: Attempt to parse requirements string and notify on bad format
+			try:
+				subprocess.check_call([str(path), "-m", "pip", "install", dependency])
+				log.log_info(f"Installed dependency: {dependency}")
+			except Exception as e:
+				log.log_info(f"Failed to install dependency {dependency} {e}")
+				result = False
+		return result
 
 
 PythonScriptingProvider().register()
